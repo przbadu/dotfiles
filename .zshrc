@@ -186,12 +186,12 @@ export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
 # Fix Ctrl + arrow functionality for iTerm2
-bindkey -e
-bindkey '\e\e[C' forward-word
-bindkey '\e\e[D' backward-word
+# bindkey -e
+# bindkey '\e\e[C' forward-word
+# bindkey '\e\e[D' backward-word
 # Alt + arrow
-bindkey '^[[1;9C' forward-word
-bindkey '^[[1;9D' backward-word
+# bindkey '^[[1;9C' forward-word
+# bindkey '^[[1;9D' backward-word
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
