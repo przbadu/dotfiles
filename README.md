@@ -6,5 +6,5 @@ brew install stow
 ```
 
 ```sh
-stow --target ~/.config .
+stow .
 ```
