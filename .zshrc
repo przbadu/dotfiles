@@ -206,3 +206,8 @@ export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 export GITHUB_ACCESS_TOKEN="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"
 
+
+# Fix backward and forward jumping
+# If these characters are different find by running Cmd + v followed by the key Control + Backward arrow / Forward arrow
+bindkey '^[[1;3D' backward-word
+bindkey '^[[1;3C' forward-word
