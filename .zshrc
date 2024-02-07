@@ -152,10 +152,24 @@ export PATH=$PATH:$ANDROID_HOME/platform-tools
 export PATH=$PATH:$HOME/.pub-cache/bin
 
 # flutter
-export PATH="$HOME/development/flutter/bin:$PATH"
+if [[ -d "$HOME/flutter/bin" ]]
+then
+  export PATH="$HOME/flutter/bin:$PATH"
+else
+  export PATH="$HOME/development/flutter/bin:$PATH"
+fi
+
+# GO
+export GOBIN=$HOME/.config/gobin/bin
+export PATH=$PATH:$GOBIN
+# DENO
+export DENO_INSTALL="/home/przbadu/.deno"
+export PATH="$DENO_INSTALL/bin:$PATH"
+
 
 # Register ~/.local/bin to the PATH
 export PATH=/Users/przbadu/.local/bin:$PATH
+
 
 # home brew
 if [ -d "$HOMEBREW_PREFIX/bin/brew" ]; then
@@ -169,12 +183,23 @@ if [ -d "$HOMEBREW_PREFIX/bin/brew" ]; then
   export RBENV_ROOT=$HOMEBREW_PREFIX/opt/rbenv
   export PATH=$RBENV_ROOT/bin:$PATH
   eval "$(rbenv init -)"
-  # openssl
-  export PATH="$HOMEBREW_PREFIX/opt/openssl@1.1/bin:$PATH"
-  export LDFLAGS="-L$HOMEBREW_PREFIX/opt/openssl@1.1/lib"
-  export CPPFLAGS="-I$HOMEBREW_PREFIX/opt/openssl@1.1/include"
-  export PKG_CONFIG_PATH="$HOMEBREW_PREFIX/opt/openssl@1.1/lib/pkgconfig"
-  export RUBY_CONFIGURE_OPTS="--with-openssl-dir=$HOMEBREW_PREFIX/opt/openssl@1.1"
+  # # openssl
+  # TODO: remove this config
+  # export PATH="$HOMEBREW_PREFIX/opt/openssl@1.1/bin:$PATH"
+  # export LDFLAGS="-L$HOMEBREW_PREFIX/opt/openssl@1.1/lib"
+  # export CPPFLAGS="-I$HOMEBREW_PREFIX/opt/openssl@1.1/include"
+  # export PKG_CONFIG_PATH="$HOMEBREW_PREFIX/opt/openssl@1.1/lib/pkgconfig"
+  # export RUBY_CONFIGURE_OPTS="--with-openssl-dir=$HOMEBREW_PREFIX/opt/openssl@1.1"
+fi
+
+if [[ -d "$HOME/.rbenv/bin" ]]; then
+  # rbenv
+  export PATH="$HOME/.rbenv/bin:$HOME/.fnm:$PATH"
+  export PATH="$HOME/.rbenv/plugins/ruby-build/bin:$PATH"
+  eval "$(rbenv init -)"
+
+  # fnm
+  eval "$(fnm env --use-on-cd)"
 fi
 
 # sources
