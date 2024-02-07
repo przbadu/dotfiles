@@ -132,7 +132,7 @@ alias dcdev="docker-compose -f docker-compose-dev.yml"
 alias web="dcdev run web"
 alias rtest="RAILS_ENV=test bundle exec rake test TESTOPTS=\"--seed=25773\" TESTOPTS=--profile"
 # alias rtest="bundle exec ruby -I test "
-alias ibrew="arch -x86_64 /opt/homebrew/bin/brew"
+alias ibrew="arch -x86_64 $HOMEBREW_PREFIX/bin/brew"
 alias dashy="docker run -d -p 8080:80 --name przbadu --restart=always lissy93/dashy:latest"
 alias ridesharedb="psql \"postgres://owner:@localhost:5432/rideshare_development\""
 alias alacritty="/Applications/Alacritty.app/Contents/MacOS/alacritty"
@@ -150,8 +150,6 @@ export PATH=$PATH:$ANDROID_HOME/tools
 export PATH=$PATH:$ANDROID_HOME/tools/bin
 export PATH=$PATH:$ANDROID_HOME/platform-tools
 export PATH=$PATH:$HOME/.pub-cache/bin
-# gem install pg fix (brew install libpq)
-# export PATH="/opt/homebrew/opt/libpq/bin:$PATH"
 
 # flutter
 export PATH="$HOME/development/flutter/bin:$PATH"
@@ -160,20 +158,24 @@ export PATH="$HOME/development/flutter/bin:$PATH"
 export PATH=/Users/przbadu/.local/bin:$PATH
 
 # home brew
-eval "$(/opt/homebrew/bin/brew shellenv)"
-export PATH="/opt/homebrew/opt/postgresql@16/bin:$PATH"
-# export PATH="/opt/homebrew/opt/postgresql@14/bin:$PATH"
+if [ -d "$HOMEBREW_PREFIX/bin/brew" ]; then
+  eval "$($HOMEBREW_PREFIX/bin/brew shellenv)"
+  export PATH="$HOMEBREW_PREFIX/opt/postgresql@16/bin:$PATH"
+  # export PATH="$HOMEBREW_PREFIX/opt/postgresql@14/bin:$PATH"
+fi
 
-# rbenv
-export RBENV_ROOT=/opt/homebrew/opt/rbenv
-export PATH=$RBENV_ROOT/bin:$PATH
-eval "$(rbenv init -)"
-# openssl
-export PATH="/opt/homebrew/opt/openssl@1.1/bin:$PATH"
-export LDFLAGS="-L/opt/homebrew/opt/openssl@1.1/lib"
-export CPPFLAGS="-I/opt/homebrew/opt/openssl@1.1/include"
-export PKG_CONFIG_PATH="/opt/homebrew/opt/openssl@1.1/lib/pkgconfig"
-export RUBY_CONFIGURE_OPTS="--with-openssl-dir=/opt/homebrew/opt/openssl@1.1"
+if [ -d "$HOMEBREW_PREFIX/bin/brew" ]; then
+  # rbenv
+  export RBENV_ROOT=$HOMEBREW_PREFIX/opt/rbenv
+  export PATH=$RBENV_ROOT/bin:$PATH
+  eval "$(rbenv init -)"
+  # openssl
+  export PATH="$HOMEBREW_PREFIX/opt/openssl@1.1/bin:$PATH"
+  export LDFLAGS="-L$HOMEBREW_PREFIX/opt/openssl@1.1/lib"
+  export CPPFLAGS="-I$HOMEBREW_PREFIX/opt/openssl@1.1/include"
+  export PKG_CONFIG_PATH="$HOMEBREW_PREFIX/opt/openssl@1.1/lib/pkgconfig"
+  export RUBY_CONFIGURE_OPTS="--with-openssl-dir=$HOMEBREW_PREFIX/opt/openssl@1.1"
+fi
 
 # sources
 source $ZSH/oh-my-zsh.sh
@@ -192,6 +194,10 @@ export NVM_DIR="$HOME/.nvm"
 # Alt + arrow
 # bindkey '^[[1;9C' forward-word
 # bindkey '^[[1;9D' backward-word
+# Fix backward and forward jumping
+# If these characters are different find by running Cmd + v followed by the key Control + Backward arrow / Forward arrow
+bindkey '^[[1;3D' backward-word
+bindkey '^[[1;3C' forward-word
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
@@ -205,9 +211,3 @@ export NVM_DIR="$HOME/.nvm"
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 export GITHUB_ACCESS_TOKEN="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"
-
-
-# Fix backward and forward jumping
-# If these characters are different find by running Cmd + v followed by the key Control + Backward arrow / Forward arrow
-bindkey '^[[1;3D' backward-word
-bindkey '^[[1;3C' forward-word
