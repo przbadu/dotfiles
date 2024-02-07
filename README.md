@@ -19,7 +19,7 @@ sudo apt install stow
 # add tpm (Tmux plugin manager)
 git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 
-git clone https://github.com/przbadu/dotfiles ~/dotfiles
+git clone git@github.com:przbadu/dotfiles.git ~/dotfiles
 cd dotfiles
 
 # symlink dotfiles
