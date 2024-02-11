@@ -118,8 +118,7 @@ alias rs="rails s"
 alias js="bundle exec jekyll serve"
 alias jb="bundle exec jekyll build"
 alias sk="bundle exec sidekiq -c 1 -v"
-alias es="sudo docker run -p 9200:9200 -p 9300:9300 -e \"discovery.type=single-node\" docker.elastic.co/elasticsearch/elasticsearch:6.2.2"
-alias es7="docker run -p 9200:9200 -e \"http.host=0.0.0.0\" -e \"transport.host=127.0.0.1\" docker.elastic.co/elasticsearch/elasticsearch:7.10.1"
+alias es7="docker start elesticsearch_7 || docker run -d --name elesticsearch_7 -p 9200:9200 -e \"http.host=0.0.0.0\" -e \"transport.host=127.0.0.1\" docker.elastic.co/elasticsearch/elasticsearch:7.10.1"
 alias e='nvim'
 alias po="cd ~/projects/pex/po-app"
 alias blog='cd ~/projects/personal/przbadu.github.io'
@@ -136,7 +135,6 @@ alias ibrew="arch -x86_64 $HOMEBREW_PREFIX/bin/brew"
 alias dashy="docker run -d -p 8080:80 --name przbadu --restart=always lissy93/dashy:latest"
 alias ridesharedb="psql \"postgres://owner:@localhost:5432/rideshare_development\""
 alias alacritty="/Applications/Alacritty.app/Contents/MacOS/alacritty"
-
 
 # Open AI api key
 export OPENAI_API_KEY="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"
@@ -160,15 +158,14 @@ else
 fi
 
 # GO
-export GOBIN=$HOME/.config/gobin/bin
-export PATH=$PATH:$GOBIN
+export PATH=$PATH:/usr/local/go/bin
 # DENO
-export DENO_INSTALL="/home/przbadu/.deno"
+export DENO_INSTALL="~/.deno"
 export PATH="$DENO_INSTALL/bin:$PATH"
 
 
 # Register ~/.local/bin to the PATH
-export PATH=/Users/przbadu/.local/bin:$PATH
+export PATH=~/.local/bin:$PATH
 
 
 # home brew
@@ -230,9 +227,14 @@ bindkey '^[[1;3C' forward-word
 # alias ls="colorls"
 
 # bun completions
-[ -s "/Users/przbadu/.bun/_bun" ] && source "/Users/przbadu/.bun/_bun"
+[ -s "~/.bun/_bun" ] && source "~/.bun/_bun"
 
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 export GITHUB_ACCESS_TOKEN="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"
+
+# install asdf
+. "$HOME/.asdf/asdf.sh"
+. "$HOME/.asdf/completions/asdf.bash"
+
