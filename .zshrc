@@ -107,7 +107,7 @@ plugins=(git zsh-autosuggestions zsh-syntax-highlighting web-search)
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 
-export EDITOR='vim'
+export EDITOR='nvim'
 
 alias cl="clear"
 alias python="python3"
@@ -119,6 +119,7 @@ alias js="bundle exec jekyll serve"
 alias jb="bundle exec jekyll build"
 alias sk="bundle exec sidekiq -c 1 -v"
 alias es7="docker start elesticsearch_7 || docker run -d --name elesticsearch_7 -p 9200:9200 -e \"http.host=0.0.0.0\" -e \"transport.host=127.0.0.1\" docker.elastic.co/elasticsearch/elasticsearch:7.10.1"
+alias redis="docker start redis || docker run -d --name redis -p 6379:6379 redis"
 alias e='nvim'
 alias po="cd ~/projects/pex/po-app"
 alias blog='cd ~/projects/personal/przbadu.github.io'
@@ -238,3 +239,6 @@ export GITHUB_ACCESS_TOKEN="github_pat_11AA76XSI0iUb9IY4ESWML_uIhxHRIsB13EYfwudy
 . "$HOME/.asdf/asdf.sh"
 . "$HOME/.asdf/completions/asdf.bash"
 
+# fly
+export FLYCTL_INSTALL="/home/przbadu/.fly"
+export PATH="$FLYCTL_INSTALL/bin:$PATH"
