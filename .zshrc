@@ -107,7 +107,8 @@ plugins=(git zsh-autosuggestions zsh-syntax-highlighting web-search)
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 
-export EDITOR='nvim'
+export EDITOR="nvim"
+export SUDO_EDITOR="nvim"
 
 alias cl="clear"
 alias python="python3"
@@ -202,7 +203,7 @@ fi
 
 # sources
 source $ZSH/oh-my-zsh.sh
-source "$HOME/.cargo/env"
+# source "$HOME/.cargo/env"
 # source $HOME/.asdf/asdf.sh
 
 # Node version manager (nvm)
@@ -235,10 +236,23 @@ export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 export GITHUB_ACCESS_TOKEN="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"
 
-# install asdf
-. "$HOME/.asdf/asdf.sh"
-. "$HOME/.asdf/completions/asdf.bash"
-
 # fly
 export FLYCTL_INSTALL="/home/przbadu/.fly"
 export PATH="$FLYCTL_INSTALL/bin:$PATH"
+
+###############################
+# OMAKUB configs
+# #############################
+export OMAKUB_PATH="/home/$USER/.local/share/omakub"
+export PATH="$HOME/.local/share/omakub/bin:$PATH"
+set +h
+
+# Setup mise
+if command -v mise &> /dev/null; then
+  eval "$(mise activate bash)"
+else
+  gum confirm "You're missing mise (replacement for rbenv + nodenv). Install now?" && \
+    source $OMAKUB_PATH/install/mise.sh
+fi
+
+eval "$(zoxide init bash)"
