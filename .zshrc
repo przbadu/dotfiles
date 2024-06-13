@@ -249,7 +249,7 @@ set +h
 
 # Setup mise
 if command -v mise &> /dev/null; then
-  eval "$(mise activate bash)"
+  eval "$(mise activate zsh)"
 else
   gum confirm "You're missing mise (replacement for rbenv + nodenv). Install now?" && \
     source $OMAKUB_PATH/install/mise.sh
