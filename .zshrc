@@ -240,19 +240,8 @@ export GITHUB_ACCESS_TOKEN="github_pat_11AA76XSI0iUb9IY4ESWML_uIhxHRIsB13EYfwudy
 export FLYCTL_INSTALL="/home/przbadu/.fly"
 export PATH="$FLYCTL_INSTALL/bin:$PATH"
 
-###############################
-# OMAKUB configs
-# #############################
-export OMAKUB_PATH="/home/$USER/.local/share/omakub"
-export PATH="$HOME/.local/share/omakub/bin:$PATH"
-set +h
+. "$HOME/.asdf/asdf.sh"
+. "$HOME/.asdf/completions/asdf.bash"
 
-# Setup mise
-if command -v mise &> /dev/null; then
-  eval "$(mise activate zsh)"
-else
-  gum confirm "You're missing mise (replacement for rbenv + nodenv). Install now?" && \
-    source $OMAKUB_PATH/install/mise.sh
-fi
-
-eval "$(zoxide init bash)"
+## FIX: Rails and Puma crash issue with PG
+export PGGSSENCMODE="disable"
