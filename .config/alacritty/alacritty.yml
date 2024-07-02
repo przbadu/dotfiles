@@ -1,0 +1,14 @@
+font:
+  normal:
+    family: "CascadiaCode Nerd Font"
+    style: Regular
+  bold:
+    family: "CascadiaCode Nerd Font"
+    style: Bold
+  italic:
+    family: "CascadiaCode Nerd Font"
+    style: Italic
+  bold_italic:
+    family: "CascadiaCode Nerd Font"
+    style: Bold Italic
+  size: 14
