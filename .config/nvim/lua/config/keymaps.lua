@@ -17,3 +17,10 @@ keymap("n", "<leader>tg", ":TestVisit<CR>", default_opts)
 
 -- autorun current ruby file
 keymap("n", "<leader>rr", ":term ruby % <CR>", default_opts)
+
+-- pyright ignore line
+vim.keymap.set("n", "<leader>ig", "A # pyright: ignore<Esc>")
+
+-- checkbox
+vim.keymap.set('n', '<leader>ty', [[:s/\[\s\]/[x]/<cr>]], { silent = true })
+vim.keymap.set('n', '<leader>tu', [[:s/\[x\]/[ ]/<cr>]], { silent = true })
