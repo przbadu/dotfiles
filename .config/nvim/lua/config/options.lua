@@ -8,5 +8,6 @@ vim.cmd([[
       let test#neovim#term_position = "vert"
       ]])
 
--- disable autoformat
-vim.g.autoformat = false -- false
+vim.g.autoformat = false -- true/false disable autoformat
+
+vim.o.conceallevel = 2 -- set conceal level for obsidian plugin

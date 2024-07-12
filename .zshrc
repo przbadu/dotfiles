@@ -138,6 +138,11 @@ alias dashy="docker run -d -p 8080:80 --name przbadu --restart=always lissy93/da
 alias ridesharedb="psql \"postgres://owner:@localhost:5432/rideshare_development\""
 alias alacritty="/Applications/Alacritty.app/Contents/MacOS/alacritty"
 
+# Obsidian aliases
+alias oo='cd $HOME/SecondBrain'
+alias or='$EDITOR $HOME/SecondBrain/inbox/*.md'
+alias ou='cd $HOME/SecondBrain && node batchUpload.js --lastmod-days-window 5'
+
 # Open AI api key
 export OPENAI_API_KEY="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"
 

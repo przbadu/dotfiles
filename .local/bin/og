@@ -3,7 +3,7 @@
 # Credit: https://github.com/agalea91/dotfiles/blob/main/bin/og
 
 # Directory containing markdown files
-VAULT_DIR="~/SecondBrain"
+VAULT_DIR=~/SecondBrain
 SOURCE_DIR="zettelkasten" # a.k.a "note box"
 DEST_DIR="notes"
 
