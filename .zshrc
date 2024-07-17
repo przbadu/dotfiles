@@ -107,6 +107,21 @@ plugins=(git zsh-autosuggestions zsh-syntax-highlighting web-search)
 # alias zshconfig="mate ~/.zshrc"
 # alias ohmyzsh="mate ~/.oh-my-zsh"
 
+# method to detect Linux/Mac os
+is_linux() {
+    case "$(uname -s)" in
+        Linux*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+is_mac() {
+    case "$(uname -s)" in
+        Darwin*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
 export EDITOR="nvim"
 export SUDO_EDITOR="nvim"
 
@@ -136,7 +151,10 @@ alias rtest="RAILS_ENV=test bundle exec rake test TESTOPTS=\"--seed=25773\" TEST
 alias ibrew="arch -x86_64 $HOMEBREW_PREFIX/bin/brew"
 alias dashy="docker run -d -p 8080:80 --name przbadu --restart=always lissy93/dashy:latest"
 alias ridesharedb="psql \"postgres://owner:@localhost:5432/rideshare_development\""
-alias alacritty="/Applications/Alacritty.app/Contents/MacOS/alacritty"
+
+if is_mac; then
+  alias alacritty="/Applications/Alacritty.app/Contents/MacOS/alacritty"
+fi
 
 # Obsidian aliases
 alias oo='cd $HOME/SecondBrain'
@@ -148,7 +166,15 @@ export OPENAI_API_KEY="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"
 
 # android setup
 # setup steps: https://proandroiddev.com/how-to-setup-android-sdk-without-android-studio-6d60d0f2812a
-export ANDROID_HOME=$HOME/Library/Android
+if is_mac; then
+  export ANDROID_HOME=$HOME/Library/Android
+elif is_linux; then
+  export ANDROID_HOME=$HOME/Android
+  ## Java SDK
+  export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+  export PATH=$PATH:$JAVA_HOME/bin
+fi
+
 export ANDROID_SDK_ROOT=$ANDROID_HOME/cmdline-tools
 export PATH=$PATH:$ANDROID_HOME/emulator
 export PATH=$PATH:$ANDROID_HOME/tools
@@ -170,10 +196,8 @@ export PATH=$PATH:/usr/local/go/bin
 export DENO_INSTALL="~/.deno"
 export PATH="$DENO_INSTALL/bin:$PATH"
 
-
 # Register ~/.local/bin to the PATH
 export PATH=~/.local/bin:$PATH
-
 
 # home brew
 if [ -d "$HOMEBREW_PREFIX/bin/brew" ]; then
@@ -182,39 +206,10 @@ if [ -d "$HOMEBREW_PREFIX/bin/brew" ]; then
   # export PATH="$HOMEBREW_PREFIX/opt/postgresql@14/bin:$PATH"
 fi
 
-if [ -d "$HOMEBREW_PREFIX/bin/brew" ]; then
-  # rbenv
-  export RBENV_ROOT=$HOMEBREW_PREFIX/opt/rbenv
-  export PATH=$RBENV_ROOT/bin:$PATH
-  eval "$(rbenv init -)"
-  # # openssl
-  # TODO: remove this config
-  # export PATH="$HOMEBREW_PREFIX/opt/openssl@1.1/bin:$PATH"
-  # export LDFLAGS="-L$HOMEBREW_PREFIX/opt/openssl@1.1/lib"
-  # export CPPFLAGS="-I$HOMEBREW_PREFIX/opt/openssl@1.1/include"
-  # export PKG_CONFIG_PATH="$HOMEBREW_PREFIX/opt/openssl@1.1/lib/pkgconfig"
-  # export RUBY_CONFIGURE_OPTS="--with-openssl-dir=$HOMEBREW_PREFIX/opt/openssl@1.1"
-fi
-
-if [[ -d "$HOME/.rbenv/bin" ]]; then
-  # rbenv
-  export PATH="$HOME/.rbenv/bin:$HOME/.fnm:$PATH"
-  export PATH="$HOME/.rbenv/plugins/ruby-build/bin:$PATH"
-  eval "$(rbenv init -)"
-
-  # fnm
-  eval "$(fnm env --use-on-cd)"
-fi
-
 # sources
 source $ZSH/oh-my-zsh.sh
 # source "$HOME/.cargo/env"
 # source $HOME/.asdf/asdf.sh
-
-# Node version manager (nvm)
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
 # Fix Ctrl + arrow functionality for iTerm2
 # bindkey -e
@@ -245,8 +240,49 @@ export GITHUB_ACCESS_TOKEN="github_pat_11AA76XSI0iUb9IY4ESWML_uIhxHRIsB13EYfwudy
 export FLYCTL_INSTALL="/home/przbadu/.fly"
 export PATH="$FLYCTL_INSTALL/bin:$PATH"
 
+## FIX: Rails and Puma crash issue with PG
+if is_mac; then
+  export PGGSSENCMODE="disable"
+fi
+
+# ASDF in Mac
+if is_mac; then
 . "$HOME/.asdf/asdf.sh"
 . "$HOME/.asdf/completions/asdf.bash"
+fi
 
-## FIX: Rails and Puma crash issue with PG
-export PGGSSENCMODE="disable"
+
+###############################
+# OMAKUB configs
+# #############################
+if is_linux; then
+  export OMAKUB_PATH="/home/$USER/.local/share/omakub"
+  export PATH="$HOME/.local/share/omakub/bin:$PATH"
+  set +h
+
+  # Setup mise
+  if command -v mise &> /dev/null; then
+    eval "$(mise activate zsh)"
+  else
+    gum confirm "You're missing mise (replacement for rbenv + nodenv). Install now?" && \
+      source $OMAKUB_PATH/install/mise.sh
+  fi
+
+  eval "$(zoxide init bash)"
+fi
+
+# >>> conda initialize >>>
+# !! Contents within this block are managed by 'conda init' !!
+__conda_setup="$('/home/przbadu/miniconda3/bin/conda' 'shell.zsh' 'hook' 2> /dev/null)"
+if [ $? -eq 0 ]; then
+    eval "$__conda_setup"
+else
+    if [ -f "/home/przbadu/miniconda3/etc/profile.d/conda.sh" ]; then
+        . "/home/przbadu/miniconda3/etc/profile.d/conda.sh"
+    else
+        export PATH="/home/przbadu/miniconda3/bin:$PATH"
+    fi
+fi
+unset __conda_setup
+# <<< conda initialize <<<
+
