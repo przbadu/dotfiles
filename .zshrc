@@ -140,7 +140,7 @@ alias e='nvim'
 alias po="cd ~/projects/pex/po-app"
 alias blog='cd ~/projects/personal/przbadu.github.io'
 alias expense='cd ~/projects/personal/MyExpenses'
-alias gcc="lazygit"
+alias gcc="npx better-commits"
 alias tmuxworkflow="sh ~/workflows/tmux-workflow.sh"
 alias top='btop'
 alias htop='btop'
@@ -164,24 +164,6 @@ alias ou='cd $HOME/SecondBrain && node batchUpload.js --lastmod-days-window 5'
 # Open AI api key
 export OPENAI_API_KEY="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"
 
-# android setup
-# setup steps: https://proandroiddev.com/how-to-setup-android-sdk-without-android-studio-6d60d0f2812a
-if is_mac; then
-  export ANDROID_HOME=$HOME/Library/Android
-elif is_linux; then
-  export ANDROID_HOME=$HOME/Android
-  ## Java SDK
-  export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-  export PATH=$PATH:$JAVA_HOME/bin
-fi
-
-export ANDROID_SDK_ROOT=$ANDROID_HOME/cmdline-tools
-export PATH=$PATH:$ANDROID_HOME/emulator
-export PATH=$PATH:$ANDROID_HOME/tools
-export PATH=$PATH:$ANDROID_HOME/tools/bin
-export PATH=$PATH:$ANDROID_HOME/platform-tools
-export PATH=$PATH:$HOME/.pub-cache/bin
-
 # flutter
 if [[ -d "$HOME/flutter/bin" ]]
 then
@@ -198,6 +180,11 @@ export PATH="$DENO_INSTALL/bin:$PATH"
 
 # Register ~/.local/bin to the PATH
 export PATH=~/.local/bin:$PATH
+# Android cmdline-tools
+export ANDROID_HOME=~/Android
+export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$PATH
+export PATH=$ANDROID_HOME/platform-tools:$PATH
+export PATH=$ANDROID_HOME/emulator:$PATH
 
 # home brew
 if [ -d "$HOMEBREW_PREFIX/bin/brew" ]; then
@@ -286,3 +273,11 @@ fi
 unset __conda_setup
 # <<< conda initialize <<<
 
+
+### Coder config
+# Listen on port 80
+export CODER_HTTP_ADDRESS=0.0.0.0:8080
+# Enable TLS and listen on port 443)
+export CODER_TLS_ENABLE=false
+## Redirect from HTTP to HTTPS
+export CODER_REDIRECT_TO_ACCESS_URL=false
