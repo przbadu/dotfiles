@@ -1,0 +1,13 @@
+color = ''
+project-name = 'default'
+[default]
+account_id = 'acct_1ChJ5eLZ7cS5Xtrb'
+device_name = 'Pushpas-Macbook-Pro.local'
+display_name = 'ProcurementExpress-Staging'
+live_mode_api_key = 'rk_live_***********************************************************************************************xn2C'
+live_mode_key_expires_at = '2025-01-05'
+live_mode_pub_key = 'pk_live_L0HCT34SW14BfU1u4v8jV5GK'
+test_mode_api_key = 'rk_test_51ChJ5eLZ7cS5Xtrb76lbScrhDkqIuCxfrC6TjBhPEtmWXcSc96GtoTbxAezspYFafYgfUcukEWRodqzB5BaR7OL10025PDkIRe'
+test_mode_key_expires_at = '2025-01-05'
+test_mode_pub_key = 'pk_test_IX9BHa01cqZCArolKOrUCinI'
+

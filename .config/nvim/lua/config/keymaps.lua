@@ -24,3 +24,6 @@ vim.keymap.set("n", "<leader>ig", "A # pyright: ignore<Esc>")
 -- checkbox
 vim.keymap.set('n', '<leader>ty', [[:s/\[\s\]/[x]/<cr>]], { silent = true })
 vim.keymap.set('n', '<leader>tu', [[:s/\[x\]/[ ]/<cr>]], { silent = true })
+
+-- jj to escape
+vim.keymap.set("i", "jj", "<ESC>", { silent = true })

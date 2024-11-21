@@ -86,7 +86,8 @@ plugins=(git zsh-autosuggestions zsh-syntax-highlighting web-search)
 # export MANPATH="/usr/local/man:$MANPATH"
 
 # You may need to manually set your language environment
-# export LANG=en_US.UTF-8
+export LANG=en_US.UTF-8
+export LC_ALL=en_US.UTF-8
 
 # Preferred editor for local and remote sessions
 # if [[ -n $SSH_CONNECTION ]]; then
@@ -195,7 +196,7 @@ fi
 
 # sources
 source $ZSH/oh-my-zsh.sh
-# source "$HOME/.cargo/env"
+source "$HOME/.cargo/env"
 # source $HOME/.asdf/asdf.sh
 
 # Fix Ctrl + arrow functionality for iTerm2
@@ -207,8 +208,8 @@ source $ZSH/oh-my-zsh.sh
 # bindkey '^[[1;9D' backward-word
 # Fix backward and forward jumping
 # If these characters are different find by running Cmd + v followed by the key Control + Backward arrow / Forward arrow
-bindkey '^[[1;3D' backward-word
-bindkey '^[[1;3C' forward-word
+# bindkey '^[[1;3D' backward-word
+# bindkey '^[[1;3C' forward-word
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
