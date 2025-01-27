@@ -282,3 +282,6 @@ export CODER_HTTP_ADDRESS=0.0.0.0:8080
 export CODER_TLS_ENABLE=false
 ## Redirect from HTTP to HTTPS
 export CODER_REDIRECT_TO_ACCESS_URL=false
+
+# Added by Windsurf
+export PATH="/Users/przbadu/.codeium/windsurf/bin:$PATH"
