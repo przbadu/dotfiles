@@ -162,9 +162,6 @@ alias oo='cd $HOME/SecondBrain'
 alias or='$EDITOR $HOME/SecondBrain/inbox/*.md'
 alias ou='cd $HOME/SecondBrain && node batchUpload.js --lastmod-days-window 5'
 
-# Open AI api key
-export OPENAI_API_KEY="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"
-
 # flutter
 if [[ -d "$HOME/flutter/bin" ]]
 then
@@ -222,7 +219,6 @@ source "$HOME/.cargo/env"
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
-export GITHUB_ACCESS_TOKEN="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"
 
 # fly
 export FLYCTL_INSTALL="/home/przbadu/.fly"

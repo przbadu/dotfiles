@@ -34,6 +34,8 @@ We encourage users to inspect the script before running it:
 > Directly from curl command e.g: `curl -sSL <path> | bash` will throw error.
 > if you already have zsh installed, you can run it like that, otherwise follow:
 
+**If you want to use zsh shell**
+
 ```bash
 curl -sSL https://raw.githubusercontent.com/przbadu/dotfiles/main/setup.sh > setup.sh
 # Review the content please...
@@ -43,6 +45,12 @@ chmod +x setup.sh
 
 # after succesfully completed
 rm setup.sh
+```
+
+**If you want to use bash shell or if you already have zsh activated**
+
+```sh
+curl -sSL https://raw.githubusercontent.com/przbadu/dotfiles/main/setup.sh | bash
 ```
 
 ### Configuration Options
