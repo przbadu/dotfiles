@@ -53,23 +53,58 @@ install_dependencies() {
   if ! dpkg -l | grep -q build-essential; then
     log "Installing build-essential and other dependencies..."
     sudo apt update
-    sudo apt install -y build-essential rustc libssl-dev libyaml-dev zlib1g-dev libgmp-dev
+    sudo apt install -y build-essential rustc libssl-dev libyaml-dev zlib1g-dev libgmp-dev zsh
   else
     warn "Dependencies already installed, skipping..."
   fi
 }
 
+# Install zsh and oh-my-zsh
+install_zsh() {
+    log "Checking zsh installation..."
+    if ! command_exists zsh; then
+        log "Installing zsh..."
+        sudo apt install -y zsh
+    else
+        warn "zsh already installed, skipping..."
+    fi
+
+    # Backup existing .zshrc if it exists
+    if [ -f "${HOME}/.zshrc" ]; then
+        log "Backing up existing .zshrc..."
+        backup_dir "${HOME}/.zshrc"
+    fi
+
+    # Install oh-my-zsh if not already installed
+    if [ ! -d "${HOME}/.oh-my-zsh" ]; then
+        log "Installing oh-my-zsh..."
+        sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+    else
+        warn "oh-my-zsh already installed, skipping..."
+    fi
+
+    # Set zsh as default shell if it isn't already
+    if [ "$SHELL" != "$(which zsh)" ]; then
+        log "Setting zsh as default shell..."
+        chsh -s "$(which zsh)"
+    fi
+}
+
 # Setup mise
 setup_mise() {
-  if ! command_exists mise; then
-    log "Installing mise..."
-    curl https://mise.run | sh
-    if ! grep -q "mise activate" "${HOME}/.bashrc"; then
-      echo 'eval "$(${HOME}/.local/bin/mise activate)"' >>"${HOME}/.bashrc"
+    if ! command_exists mise; then
+        log "Installing mise..."
+        curl https://mise.run | sh
+        if ! grep -q "mise activate" "${HOME}/.zshrc"; then
+            echo 'eval "$(/home/przbadu/.local/bin/mise activate bash)"' >> "${HOME}/.zshrc"
+            # Export PATH for current session
+            export PATH="${HOME}/.local/bin:$PATH"
+            # Source mise directly
+            eval "$("${HOME}/.local/bin/mise" activate bash)"
+        fi
+    else
+        warn "mise already installed, skipping..."
     fi
-  else
-    warn "mise already installed, skipping..."
-  fi
 }
 
 # Install Ruby and Node.js
@@ -121,7 +156,7 @@ install_neovim() {
     sudo rm -rf /opt/nvim
     sudo tar -C /opt -xzf nvim-linux-x86_64.tar.gz
     rm -f nvim-linux-x86_64.tar.gz
-    echo 'export PATH="/opt/nvim-linux64/bin:$PATH"' >>~/.bashrc
+    echo 'export PATH="/opt/nvim-linux64/bin:$PATH"' >>~/.zshrc
   else
     warn "Neovim already installed, skipping..."
   fi
@@ -168,12 +203,17 @@ main() {
   log "Starting installation process..."
 
   install_dependencies
+  install_zsh
   setup_mise
   install_languages
   configure_git
   install_neovim
   install_lazyvim
   install_lazygit
+
+  if ! grep -q "/opt/nvim-linux64/bin" "${HOME}/.zshrc"; then
+    echo 'export PATH="/opt/nvim-linux64/bin:$PATH"' >> "${HOME}/.zshrc"
+  fi
 
   log "Installation completed successfully!"
   log "Please restart your terminal for all changes to take effect."
