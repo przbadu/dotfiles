@@ -30,11 +30,19 @@ This script automates the setup of a development environment in an LXC container
 
 We encourage users to inspect the script before running it:
 
+> NOTE: because this script contains step to install zsh and change your default shell, running script
+> Directly from curl command e.g: `curl -sSL <path> | bash` will throw error.
+> if you already have zsh installed, you can run it like that, otherwise follow:
+
 ```bash
 curl -sSL https://raw.githubusercontent.com/przbadu/dotfiles/main/setup.sh > setup.sh
+# Review the content please...
 cat setup.sh
-# Review the content, then:
-bash setup.sh
+chmod +x setup.sh
+./setup.sh
+
+# after succesfully completed
+rm setup.sh
 ```
 
 ### Configuration Options
