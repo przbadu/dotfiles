@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Exit on error
 set -e
@@ -8,6 +8,9 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
+
+# Global RC_FILE variable (will be set based on shell choice)
+RC_FILE=""
 
 # Function to log messages
 log() {
@@ -47,13 +50,39 @@ backup_dir() {
   fi
 }
 
+# Function to select shell
+select_shell() {
+    log "Select your preferred shell:"
+    log "1) zsh (default)"
+    log "2) bash"
+    read -p "Enter choice [1-2]: " shell_choice
+    shell_choice=${shell_choice:-1}
+    
+    case "${shell_choice}" in
+        1)
+            RC_FILE="${HOME}/.zshrc"
+            log "Installing and configuring zsh..."
+            install_zsh
+            ;;
+        2)
+            RC_FILE="${HOME}/.bashrc"
+            log "Using bash with ${RC_FILE}"
+            ;;
+        *)
+            log "Invalid choice '${shell_choice}'. Defaulting to zsh..."
+            RC_FILE="${HOME}/.zshrc"
+            install_zsh
+            ;;
+    esac
+}
+
 # System update and dependencies
 install_dependencies() {
   log "Checking and installing system dependencies..."
   if ! dpkg -l | grep -q build-essential; then
     log "Installing build-essential and other dependencies..."
     sudo apt update
-    sudo apt install -y build-essential rustc libssl-dev libyaml-dev zlib1g-dev libgmp-dev
+    sudo apt install -y build-essential rustc libssl-dev libyaml-dev zlib1g-dev libgmp-dev tmux
   else
     warn "Dependencies already installed, skipping..."
   fi
@@ -79,6 +108,8 @@ install_zsh() {
     if [ ! -d "${HOME}/.oh-my-zsh" ]; then
         log "Installing oh-my-zsh..."
         sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+        # Use my .zshrc file
+        curl -fsSL https://raw.githubusercontent.com/przbadu/dotfiles/refs/heads/main/ref-later/.zshrc > $HOME/.zshrc
     else
         warn "oh-my-zsh already installed, skipping..."
     fi
@@ -104,12 +135,16 @@ setup_mise() {
     if ! command_exists mise; then
         log "Installing mise..."
         curl https://mise.run | sh
-        if ! grep -q "mise activate" "${HOME}/.zshrc"; then
-            echo 'eval "$(/home/przbadu/.local/bin/mise activate bash)"' >> "${HOME}/.zshrc"
+        
+        # Get shell name from RC_FILE
+        local shell_name=$(basename "${RC_FILE}" | sed 's/\.[^.]*$//')
+        
+        if ! grep -q "mise activate" "${RC_FILE}"; then
+            echo "eval \"\$(${HOME}/.local/bin/mise activate ${shell_name})\"" >> "${RC_FILE}"
             # Export PATH for current session
             export PATH="${HOME}/.local/bin:$PATH"
             # Source mise directly
-            eval "$("${HOME}/.local/bin/mise" activate bash)"
+            eval "$("${HOME}/.local/bin/mise" activate ${shell_name})"
         fi
     else
         warn "mise already installed, skipping..."
@@ -126,6 +161,9 @@ install_languages() {
     RUBY_VERSION=${RUBY_VERSION:-3}
     log "Installing Ruby ${RUBY_VERSION}..."
     mise use --global "ruby@${RUBY_VERSION}"
+
+    # Export PATH for gem command
+    export PATH="$HOME/.local/share/mise/installs/ruby/$RUBY_VERSION/bin:$PATH"
 
     if command_exists gem; then
       log "Updating RubyGems system..."
@@ -166,11 +204,18 @@ install_neovim() {
   log "Checking Neovim installation..."
   if ! command_exists nvim; then
     log "Installing Neovim..."
-    curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
-    sudo rm -rf /opt/nvim
-    sudo tar -C /opt -xzf nvim-linux-x86_64.tar.gz
-    rm -f nvim-linux-x86_64.tar.gz
-    echo 'export PATH="/opt/nvim-linux-x86_64/bin:$PATH"' >>~/.zshrc
+    curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz
+    sudo rm -rf /opt/nvim-linux64
+    sudo tar -C /opt -xzf nvim-linux64.tar.gz
+    rm -f nvim-linux64.tar.gz
+
+    # Add to PATH in RC_FILE if not already there
+    if ! grep -q "/opt/nvim-linux64/bin" "${RC_FILE}"; then
+        echo 'export PATH="/opt/nvim-linux64/bin:$PATH"' >> "${RC_FILE}"
+    fi
+    
+    # Export PATH for current session
+    export PATH="/opt/nvim-linux64/bin:$PATH"
   else
     warn "Neovim already installed, skipping..."
   fi
@@ -212,25 +257,63 @@ install_lazygit() {
   fi
 }
 
+# Install and setup tmux
+install_tmux() {
+  log "Installing tmux..."
+  sudo apt install tmux -y
+}
+
+# Copy dotfiles
+copy_dotfiles() {
+  log "Setup tmux"
+  git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+  curl -sSL https://raw.githubusercontent.com/przbadu/dotfiles/refs/heads/main/templates/.tmux.conf > .tmux.conf
+
+  if [[ "${RC_FILE}" == *"zshrc"* ]]; then
+    log "setup ZSH"
+    # zsh-autosuggestions
+    if [ ! -d "${HOME}/.oh-my-zsh/custom/plugins/zsh-autosuggestions" ]; then
+        git clone https://github.com/zsh-users/zsh-autosuggestions ${HOME}/.oh-my-zsh/custom/plugins/zsh-autosuggestions
+    fi
+
+    # zsh-syntax-highlighting
+    if [ ! -d "${HOME}/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" ]; then
+        git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${HOME}/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
+    fi
+
+    sed -i 's/plugins=(git)/plugins=(git zsh-autosuggestions zsh-syntax-highlighting)/' "${HOME}/.zshrc"
+    curl -sSL https://raw.githubusercontent.com/przbadu/dotfiles/refs/heads/main/templates/.zshrc > .zshrc.user
+    echo -e "source ~/.zshrc.user" >> "${HOME}/.zshrc"
+  fi
+
+  source $HOME/$RC_FILE
+}
+
 # Main installation process
 main() {
   log "Starting installation process..."
 
+  # First, let user select their preferred shell
+  select_shell
+  
   install_dependencies
-  install_zsh
   setup_mise
   install_languages
   configure_git
   install_neovim
   install_lazyvim
   install_lazygit
-
-  if ! grep -q "/opt/nvim-linux64/bin" "${HOME}/.zshrc"; then
-    echo 'export PATH="/opt/nvim-linux64/bin:$PATH"' >> "${HOME}/.zshrc"
-  fi
+  install_tmux
+  copy_dotfiles
 
   log "Installation completed successfully!"
-  log "Please restart your terminal for all changes to take effect."
+  
+  # Show appropriate completion message based on shell choice
+  if [[ "${RC_FILE}" == *"zshrc"* ]]; then
+      log "Please run 'zsh' or restart your terminal for all changes to take effect."
+  else
+      log "Please run 'source ${RC_FILE}' or restart your terminal for all changes to take effect."
+  fi
 }
 
 # Run the script

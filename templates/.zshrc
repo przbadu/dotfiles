@@ -1,0 +1,37 @@
+plugins=(git zsh-autosuggestions zsh-syntax-highlighting)
+
+# Alias
+alias cl="clear"
+alias python="python3"
+alias rubymine="open -na \"RubyMine.app\""
+alias tn="tmux new"
+alias rc="rails c"
+alias rs="rails s"
+alias js="bundle exec jekyll serve"
+alias jb="bundle exec jekyll build"
+alias sk="bundle exec sidekiq -c 1 -v"
+alias es7="docker start elesticsearch_7 || docker run -d --name elesticsearch_7 -p 9200:9200 -e \"http.host=0.0.0.0\" -e \"transport.host=127.0.0.1\" docker.elastic.co/elasticsearch/elasticsearch:7.10.1"
+alias redis="docker start redis || docker run -d --name redis -p 6379:6379 redis"
+alias e='nvim'
+alias po="cd ~/projects/pex/po-app"
+alias blog='cd ~/projects/personal/przbadu.github.io'
+alias expense='cd ~/projects/personal/MyExpenses'
+alias gcc="npx better-commits"
+alias tmuxworkflow="sh ~/workflows/tmux-workflow.sh"
+alias top='btop'
+alias htop='btop'
+alias dcdev="docker-compose -f docker-compose-dev.yml"
+alias web="dcdev run web"
+alias rtest="RAILS_ENV=test bundle exec rake test TESTOPTS=\"--seed=25773\" TESTOPTS=--profile"
+# alias rtest="bundle exec ruby -I test "
+alias ibrew="arch -x86_64 $HOMEBREW_PREFIX/bin/brew"
+alias dashy="docker run -d -p 8080:80 --name przbadu --restart=always lissy93/dashy:latest"
+alias ridesharedb="psql \"postgres://owner:@localhost:5432/rideshare_development\""
+# Obsidian aliases
+alias oo='cd $HOME/SecondBrain'
+alias or='$EDITOR $HOME/SecondBrain/inbox/*.md'
+alias ou='cd $HOME/SecondBrain && node batchUpload.js --lastmod-days-window 5'
+
+export EDITOR="nvim"
+export SUDO_EDITOR="nvim"
+
