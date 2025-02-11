@@ -53,7 +53,7 @@ install_dependencies() {
   if ! dpkg -l | grep -q build-essential; then
     log "Installing build-essential and other dependencies..."
     sudo apt update
-    sudo apt install -y build-essential rustc libssl-dev libyaml-dev zlib1g-dev libgmp-dev zsh
+    sudo apt install -y build-essential rustc libssl-dev libyaml-dev zlib1g-dev libgmp-dev
   else
     warn "Dependencies already installed, skipping..."
   fi
@@ -72,7 +72,7 @@ install_zsh() {
     # Backup existing .zshrc if it exists
     if [ -f "${HOME}/.zshrc" ]; then
         log "Backing up existing .zshrc..."
-        backup_dir "${HOME}/.zshrc"
+        mv "${HOME}/.zshrc" "${HOME}/.zshrc.backup"
     fi
 
     # Install oh-my-zsh if not already installed
@@ -83,10 +83,19 @@ install_zsh() {
         warn "oh-my-zsh already installed, skipping..."
     fi
 
-    # Set zsh as default shell if it isn't already
+    # Instead of automatically changing shell, provide instructions
     if [ "$SHELL" != "$(which zsh)" ]; then
-        log "Setting zsh as default shell..."
-        chsh -s "$(which zsh)"
+        log "To set zsh as your default shell, run:"
+        echo "sudo chsh -s $(which zsh) $USER"
+        
+        # Prompt user if they want to change shell now
+        read -p "Would you like to change your default shell to zsh now? (y/N) " response
+        if [[ "$response" =~ ^[Yy]$ ]]; then
+            log "Changing default shell to zsh..."
+            sudo chsh -s "$(which zsh)" "$USER"
+        else
+            log "Skipping shell change. You can change it later using the command above."
+        fi
     fi
 }
 
