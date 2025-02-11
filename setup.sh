@@ -126,7 +126,13 @@ install_languages() {
     RUBY_VERSION=${RUBY_VERSION:-3}
     log "Installing Ruby ${RUBY_VERSION}..."
     mise use --global "ruby@${RUBY_VERSION}"
-    gem update --system
+
+    if command_exists gem; then
+      log "Updating RubyGems system..."
+      gem update --system
+    else
+      warn "gem command not found after Ruby installation, skipping system update"
+    fi
   else
     warn "Ruby already installed, skipping..."
   fi
@@ -161,11 +167,10 @@ install_neovim() {
   if ! command_exists nvim; then
     log "Installing Neovim..."
     curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
-    mv nvim-linux-x86_64/ nvim
     sudo rm -rf /opt/nvim
     sudo tar -C /opt -xzf nvim-linux-x86_64.tar.gz
     rm -f nvim-linux-x86_64.tar.gz
-    echo 'export PATH="/opt/nvim-linux64/bin:$PATH"' >>~/.zshrc
+    echo 'export PATH="/opt/nvim-linux-x86_64/bin:$PATH"' >>~/.zshrc
   else
     warn "Neovim already installed, skipping..."
   fi
