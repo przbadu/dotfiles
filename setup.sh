@@ -52,28 +52,28 @@ backup_dir() {
 
 # Function to select shell
 select_shell() {
-    log "Select your preferred shell:"
-    log "1) zsh (default)"
-    log "2) bash"
-    read -p "Enter choice [1-2]: " shell_choice
-    shell_choice=${shell_choice:-1}
-    
-    case "${shell_choice}" in
-        1)
-            RC_FILE="${HOME}/.zshrc"
-            log "Installing and configuring zsh..."
-            install_zsh
-            ;;
-        2)
-            RC_FILE="${HOME}/.bashrc"
-            log "Using bash with ${RC_FILE}"
-            ;;
-        *)
-            log "Invalid choice '${shell_choice}'. Defaulting to zsh..."
-            RC_FILE="${HOME}/.zshrc"
-            install_zsh
-            ;;
-    esac
+  log "Select your preferred shell:"
+  log "1) zsh (default)"
+  log "2) bash"
+  read -p "Enter choice [1-2]: " shell_choice
+  shell_choice=${shell_choice:-1}
+
+  case "${shell_choice}" in
+  1)
+    RC_FILE="${HOME}/.zshrc"
+    log "Installing and configuring zsh..."
+    install_zsh
+    ;;
+  2)
+    RC_FILE="${HOME}/.bashrc"
+    log "Using bash with ${RC_FILE}"
+    ;;
+  *)
+    log "Invalid choice '${shell_choice}'. Defaulting to zsh..."
+    RC_FILE="${HOME}/.zshrc"
+    install_zsh
+    ;;
+  esac
 }
 
 # System update and dependencies
@@ -90,65 +90,65 @@ install_dependencies() {
 
 # Install zsh and oh-my-zsh
 install_zsh() {
-    log "Checking zsh installation..."
-    if ! command_exists zsh; then
-        log "Installing zsh..."
-        sudo apt install -y zsh
+  log "Checking zsh installation..."
+  if ! command_exists zsh; then
+    log "Installing zsh..."
+    sudo apt install -y zsh
+  else
+    warn "zsh already installed, skipping..."
+  fi
+
+  # Backup existing .zshrc if it exists
+  if [ -f "${HOME}/.zshrc" ]; then
+    log "Backing up existing .zshrc..."
+    mv "${HOME}/.zshrc" "${HOME}/.zshrc.backup"
+  fi
+
+  # Install oh-my-zsh if not already installed
+  if [ ! -d "${HOME}/.oh-my-zsh" ]; then
+    log "Installing oh-my-zsh..."
+    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+    # Use my .zshrc file
+    curl -fsSL https://raw.githubusercontent.com/przbadu/dotfiles/refs/heads/main/ref-later/.zshrc >$HOME/.zshrc
+  else
+    warn "oh-my-zsh already installed, skipping..."
+  fi
+
+  # Instead of automatically changing shell, provide instructions
+  if [ "$SHELL" != "$(which zsh)" ]; then
+    log "To set zsh as your default shell, run:"
+    echo "sudo chsh -s $(which zsh) $USER"
+
+    # Prompt user if they want to change shell now
+    read -p "Would you like to change your default shell to zsh now? (y/N) " response
+    if [[ "$response" =~ ^[Yy]$ ]]; then
+      log "Changing default shell to zsh..."
+      sudo chsh -s "$(which zsh)" "$USER"
     else
-        warn "zsh already installed, skipping..."
+      log "Skipping shell change. You can change it later using the command above."
     fi
-
-    # Backup existing .zshrc if it exists
-    if [ -f "${HOME}/.zshrc" ]; then
-        log "Backing up existing .zshrc..."
-        mv "${HOME}/.zshrc" "${HOME}/.zshrc.backup"
-    fi
-
-    # Install oh-my-zsh if not already installed
-    if [ ! -d "${HOME}/.oh-my-zsh" ]; then
-        log "Installing oh-my-zsh..."
-        sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-        # Use my .zshrc file
-        curl -fsSL https://raw.githubusercontent.com/przbadu/dotfiles/refs/heads/main/ref-later/.zshrc > $HOME/.zshrc
-    else
-        warn "oh-my-zsh already installed, skipping..."
-    fi
-
-    # Instead of automatically changing shell, provide instructions
-    if [ "$SHELL" != "$(which zsh)" ]; then
-        log "To set zsh as your default shell, run:"
-        echo "sudo chsh -s $(which zsh) $USER"
-        
-        # Prompt user if they want to change shell now
-        read -p "Would you like to change your default shell to zsh now? (y/N) " response
-        if [[ "$response" =~ ^[Yy]$ ]]; then
-            log "Changing default shell to zsh..."
-            sudo chsh -s "$(which zsh)" "$USER"
-        else
-            log "Skipping shell change. You can change it later using the command above."
-        fi
-    fi
+  fi
 }
 
 # Setup mise
 setup_mise() {
-    if ! command_exists mise; then
-        log "Installing mise..."
-        curl https://mise.run | sh
-        
-        # Get shell name from RC_FILE
-        local shell_name=$(basename "${RC_FILE}" | sed 's/\.[^.]*$//')
-        
-        if ! grep -q "mise activate" "${RC_FILE}"; then
-            echo "eval \"\$(${HOME}/.local/bin/mise activate ${shell_name})\"" >> "${RC_FILE}"
-            # Export PATH for current session
-            export PATH="${HOME}/.local/bin:$PATH"
-            # Source mise directly
-            eval "$("${HOME}/.local/bin/mise" activate ${shell_name})"
-        fi
-    else
-        warn "mise already installed, skipping..."
+  if ! command_exists mise; then
+    log "Installing mise..."
+    curl https://mise.run | sh
+
+    # Get shell name from RC_FILE
+    local shell_name=$(basename "${RC_FILE}" | sed 's/\.[^.]*$//')
+
+    if ! grep -q "mise activate" "${RC_FILE}"; then
+      echo "eval \"\$(${HOME}/.local/bin/mise activate ${shell_name})\"" >>"${RC_FILE}"
+      # Export PATH for current session
+      export PATH="${HOME}/.local/bin:$PATH"
+      # Source mise directly
+      eval "$("${HOME}/.local/bin/mise" activate ${shell_name})"
     fi
+  else
+    warn "mise already installed, skipping..."
+  fi
 }
 
 # Install Ruby and Node.js
@@ -211,9 +211,9 @@ install_neovim() {
 
     # Add to PATH in RC_FILE if not already there
     if ! grep -q "/opt/nvim-linux64/bin" "${RC_FILE}"; then
-        echo 'export PATH="/opt/nvim-linux64/bin:$PATH"' >> "${RC_FILE}"
+      echo 'export PATH="/opt/nvim-linux64/bin:$PATH"' >>"${RC_FILE}"
     fi
-    
+
     # Export PATH for current session
     export PATH="/opt/nvim-linux64/bin:$PATH"
   else
@@ -221,7 +221,34 @@ install_neovim() {
   fi
 }
 
-# Install LazyVim
+# Function to setup custom neovim config
+setup_custom_neovim_config() {
+  log "Setting up custom Neovim configurations..."
+
+  # Create directories if they don't exist
+  mkdir -p "${HOME}/.config/nvim/lua/config"
+  mkdir -p "${HOME}/.config/nvim/lua/plugins"
+
+  # Download and extract templates
+  local temp_dir=$(mktemp -d)
+
+  log "Downloading Neovim templates..."
+  curl -L https://github.com/przbadu/dotfiles/archive/main.tar.gz | tar xz -C "$temp_dir"
+
+  # Copy config files
+  log "Copying config files..."
+  cp -r "$temp_dir"/dotfiles-main/templates/nvim/lua/config/* "${HOME}/.config/nvim/lua/config/"
+
+  # Copy plugin files
+  log "Copying plugin files..."
+  cp -r "$temp_dir"/dotfiles-main/templates/nvim/lua/plugins/* "${HOME}/.config/nvim/lua/plugins/"
+
+  # Cleanup
+  rm -rf "$temp_dir"
+  log "Custom Neovim configuration setup completed."
+}
+
+# Modify install_lazyvim function to include custom config setup
 install_lazyvim() {
   log "Checking LazyVim installation..."
   if ! dir_exists "${HOME}/.config/nvim"; then
@@ -237,6 +264,9 @@ install_lazyvim() {
     log "Installing LazyVim..."
     git clone https://github.com/LazyVim/starter "${HOME}/.config/nvim"
     rm -rf "${HOME}/.config/nvim/.git"
+
+    # Add custom config setup here
+    setup_custom_neovim_config
   else
     warn "LazyVim configuration already exists, skipping..."
   fi
@@ -267,23 +297,23 @@ install_tmux() {
 copy_dotfiles() {
   log "Setup tmux"
   git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
-  curl -sSL https://raw.githubusercontent.com/przbadu/dotfiles/refs/heads/main/templates/.tmux.conf > .tmux.conf
+  curl -sSL https://raw.githubusercontent.com/przbadu/dotfiles/refs/heads/main/templates/.tmux.conf >.tmux.conf
 
   if [[ "${RC_FILE}" == *"zshrc"* ]]; then
     log "setup ZSH"
     # zsh-autosuggestions
     if [ ! -d "${HOME}/.oh-my-zsh/custom/plugins/zsh-autosuggestions" ]; then
-        git clone https://github.com/zsh-users/zsh-autosuggestions ${HOME}/.oh-my-zsh/custom/plugins/zsh-autosuggestions
+      git clone https://github.com/zsh-users/zsh-autosuggestions ${HOME}/.oh-my-zsh/custom/plugins/zsh-autosuggestions
     fi
 
     # zsh-syntax-highlighting
     if [ ! -d "${HOME}/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" ]; then
-        git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${HOME}/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
+      git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${HOME}/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
     fi
 
     sed -i 's/plugins=(git)/plugins=(git zsh-autosuggestions zsh-syntax-highlighting)/' "${HOME}/.zshrc"
-    curl -sSL https://raw.githubusercontent.com/przbadu/dotfiles/refs/heads/main/templates/.zshrc > .zshrc.user
-    echo -e "source ~/.zshrc.user" >> "${HOME}/.zshrc"
+    curl -sSL https://raw.githubusercontent.com/przbadu/dotfiles/refs/heads/main/templates/.zshrc >.zshrc.user
+    echo -e "source ~/.zshrc.user" >>"${HOME}/.zshrc"
   fi
 
   source $HOME/$RC_FILE
@@ -295,7 +325,7 @@ main() {
 
   # First, let user select their preferred shell
   select_shell
-  
+
   install_dependencies
   setup_mise
   install_languages
@@ -307,12 +337,12 @@ main() {
   copy_dotfiles
 
   log "Installation completed successfully!"
-  
+
   # Show appropriate completion message based on shell choice
   if [[ "${RC_FILE}" == *"zshrc"* ]]; then
-      log "Please run 'zsh' or restart your terminal for all changes to take effect."
+    log "Please run 'zsh' or restart your terminal for all changes to take effect."
   else
-      log "Please run 'source ${RC_FILE}' or restart your terminal for all changes to take effect."
+    log "Please run 'source ${RC_FILE}' or restart your terminal for all changes to take effect."
   fi
 }
 
