@@ -108,8 +108,6 @@ install_zsh() {
   if [ ! -d "${HOME}/.oh-my-zsh" ]; then
     log "Installing oh-my-zsh..."
     sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-    # Use my .zshrc file
-    curl -fsSL https://raw.githubusercontent.com/przbadu/dotfiles/refs/heads/main/ref-later/.zshrc >$HOME/.zshrc
   else
     warn "oh-my-zsh already installed, skipping..."
   fi
@@ -131,6 +129,7 @@ install_zsh() {
 }
 
 # Setup mise
+# Setup mise
 setup_mise() {
   if ! command_exists mise; then
     log "Installing mise..."
@@ -141,10 +140,23 @@ setup_mise() {
 
     if ! grep -q "mise activate" "${RC_FILE}"; then
       echo "eval \"\$(${HOME}/.local/bin/mise activate ${shell_name})\"" >>"${RC_FILE}"
-      # Export PATH for current session
-      export PATH="${HOME}/.local/bin:$PATH"
-      # Source mise directly
-      eval "$("${HOME}/.local/bin/mise" activate ${shell_name})"
+    fi
+
+    # Export PATH and activate mise for current session
+    export PATH="${HOME}/.local/bin:$PATH"
+    
+    # Source mise activation for current session
+    if [ -f "${HOME}/.local/bin/mise" ]; then
+      eval "$("${HOME}/.local/bin/mise" activate bash)"
+      
+      # Verify mise is now available
+      if ! command_exists mise; then
+        error "mise installation failed or not in PATH. Please check installation and try again."
+        exit 1
+      fi
+    else
+      error "mise binary not found after installation. Please check installation and try again."
+      exit 1
     fi
   else
     warn "mise already installed, skipping..."
@@ -230,21 +242,19 @@ setup_custom_neovim_config() {
   mkdir -p "${HOME}/.config/nvim/lua/plugins"
 
   # Download and extract templates
-  local temp_dir=$(mktemp -d)
-
   log "Downloading Neovim templates..."
-  curl -L https://github.com/przbadu/dotfiles/archive/main.tar.gz | tar xz -C "$temp_dir"
+  git clone https://github.com/przbadu/dotfiles.git /tmp
 
   # Copy config files
   log "Copying config files..."
-  cp -r "$temp_dir"/dotfiles-main/templates/nvim/lua/config/* "${HOME}/.config/nvim/lua/config/"
+  cp -r /tmp/dotfiles/templates/nvim/lua/config/* $HOME/.config/nvim/lua/config/
 
   # Copy plugin files
   log "Copying plugin files..."
-  cp -r "$temp_dir"/dotfiles-main/templates/nvim/lua/plugins/* "${HOME}/.config/nvim/lua/plugins/"
+  cp -r /tmp/dotfiles/templates/nvim/lua/plugins/* $HOME/.config/nvim/lua/plugins/
 
   # Cleanup
-  rm -rf "$temp_dir"
+  rm -rf /tmp/dotfiles
   log "Custom Neovim configuration setup completed."
 }
 
