@@ -34,4 +34,5 @@ alias ou='cd $HOME/SecondBrain && node batchUpload.js --lastmod-days-window 5'
 
 export EDITOR="nvim"
 export SUDO_EDITOR="nvim"
-
+export PATH="/opt/nvim-linux-x86_64/bin:$PATH"
+export PATH="${HOME}/.local/bin:$PATH"

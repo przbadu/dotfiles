@@ -39,7 +39,6 @@ We encourage users to inspect the script before running it:
 ```bash
 curl -sSL https://raw.githubusercontent.com/przbadu/dotfiles/main/setup.sh > setup.sh
 # Review the content please...
-cat setup.sh
 chmod +x setup.sh
 ./setup.sh
 
