@@ -99,18 +99,15 @@ install_zsh() {
   fi
 
   # Backup existing .zshrc if it exists
-  if [ -f "${HOME}/.zshrc" ]; then
-    log "Backing up existing .zshrc..."
-    mv "${HOME}/.zshrc" "${HOME}/.zshrc.backup"
-  fi
+  # if [ -f "${HOME}/.zshrc" ]; then
+  #   log "Backing up existing .zshrc..."
+  #   mv "${HOME}/.zshrc" "${HOME}/.zshrc.backup"
+  # fi
 
   # Install oh-my-zsh if not already installed
-  if [ ! -d "${HOME}/.oh-my-zsh" ]; then
-    log "Installing oh-my-zsh..."
-    sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-  else
-    warn "oh-my-zsh already installed, skipping..."
-  fi
+  log "Installing oh-my-zsh..."
+  sudo rm -r $HOME/.oh-my-zsh
+  sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
 
   # Instead of automatically changing shell, provide instructions
   if [ "$SHELL" != "$(which zsh)" ]; then
@@ -306,8 +303,12 @@ install_tmux() {
 # Copy dotfiles
 copy_dotfiles() {
   log "Setup tmux"
-  git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
-  curl -sSL https://raw.githubusercontent.com/przbadu/dotfiles/refs/heads/main/templates/.tmux.conf >.tmux.conf
+
+  curl -sSL https://raw.githubusercontent.com/przbadu/dotfiles/refs/heads/main/templates/.tmux.conf > .tmux.conf
+
+  if [ ! -d "${HOME}/.tmux/plugins/tpm" ]; then
+    git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+  fi
 
   if [[ "${RC_FILE}" == *"zshrc"* ]]; then
     log "setup ZSH"
@@ -322,11 +323,9 @@ copy_dotfiles() {
     fi
 
     sed -i 's/plugins=(git)/plugins=(git zsh-autosuggestions zsh-syntax-highlighting)/' "${HOME}/.zshrc"
-    curl -sSL https://raw.githubusercontent.com/przbadu/dotfiles/refs/heads/main/templates/.zshrc >.zshrc.user
-    echo -e "source ~/.zshrc.user" >>"${HOME}/.zshrc"
+    curl -sSL https://raw.githubusercontent.com/przbadu/dotfiles/refs/heads/main/templates/.zshrc > .zshrc.user
+    echo -e "source ~/.zshrc.user" >> "${HOME}/.zshrc"
   fi
-
-  source $HOME/$RC_FILE
 }
 
 # Main installation process
