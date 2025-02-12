@@ -82,7 +82,7 @@ install_dependencies() {
   if ! dpkg -l | grep -q build-essential; then
     log "Installing build-essential and other dependencies..."
     sudo apt update
-    sudo apt install -y build-essential rustc libssl-dev libyaml-dev zlib1g-dev libgmp-dev tmux
+    sudo apt install -y build-essential rustc libssl-dev libyaml-dev zlib1g-dev libgmp-dev libpq-dev tmux
   else
     warn "Dependencies already installed, skipping..."
   fi
