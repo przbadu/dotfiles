@@ -212,18 +212,18 @@ install_neovim() {
   log "Checking Neovim installation..."
   if ! command_exists nvim; then
     log "Installing Neovim..."
-    curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux64.tar.gz
-    sudo rm -rf /opt/nvim-linux64
-    sudo tar -C /opt -xzf nvim-linux64.tar.gz
-    rm -f nvim-linux64.tar.gz
+    curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
+    sudo rm -rf /opt/nvim-linux-x86_64
+    sudo tar -C /opt -xzf nvim-linux-x86_64.tar.gz
+    rm -f nvim-linux-x86_64.tar.gz
 
     # Add to PATH in RC_FILE if not already there
-    if ! grep -q "/opt/nvim-linux64/bin" "${RC_FILE}"; then
-      echo 'export PATH="/opt/nvim-linux64/bin:$PATH"' >>"${RC_FILE}"
+    if ! grep -q "/opt/nvim-linux-x86_64/bin" "${RC_FILE}"; then
+      echo 'export PATH="/opt/nvim-linux-x86_64/bin:$PATH"' >>"${RC_FILE}"
     fi
 
     # Export PATH for current session
-    export PATH="/opt/nvim-linux64/bin:$PATH"
+    export PATH="/opt/nvim-linux-x86_64/bin:$PATH"
   else
     warn "Neovim already installed, skipping..."
   fi
@@ -239,18 +239,18 @@ setup_custom_neovim_config() {
 
   # Download and extract templates
   log "Downloading Neovim templates..."
-  git clone https://github.com/przbadu/dotfiles.git /tmp
+  git clone https://github.com/przbadu/dotfiles.git
 
   # Copy config files
   log "Copying config files..."
-  cp -r /tmp/dotfiles/templates/nvim/lua/config/* $HOME/.config/nvim/lua/config/
+  cp -r dotfiles/templates/nvim/lua/config/* $HOME/.config/nvim/lua/config/
 
   # Copy plugin files
   log "Copying plugin files..."
-  cp -r /tmp/dotfiles/templates/nvim/lua/plugins/* $HOME/.config/nvim/lua/plugins/
+  cp -r dotfiles/templates/nvim/lua/plugins/* $HOME/.config/nvim/lua/plugins/
 
   # Cleanup
-  rm -rf /tmp/dotfiles
+  rm -rf dotfiles
   log "Custom Neovim configuration setup completed."
 }
 
