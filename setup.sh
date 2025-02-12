@@ -106,7 +106,6 @@ install_zsh() {
 
   # Install oh-my-zsh if not already installed
   log "Installing oh-my-zsh..."
-  sudo rm -r $HOME/.oh-my-zsh
   sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
 
   # Instead of automatically changing shell, provide instructions
