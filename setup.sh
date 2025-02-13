@@ -188,6 +188,7 @@ install_languages() {
     NODE_VERSION=${NODE_VERSION:-22.13.0}
     log "Installing Node.js ${NODE_VERSION}..."
     mise use --global "node@${NODE_VERSION}"
+    npm install --global yarn@latest
   else
     warn "Node.js already installed, skipping..."
   fi
