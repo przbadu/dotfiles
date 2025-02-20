@@ -11,3 +11,10 @@ vim.cmd([[
 vim.g.autoformat = false -- true/false disable autoformat
 
 vim.o.conceallevel = 2 -- set conceal level for obsidian plugin
+
+-- Setup NVIM for jupyter notebook and ML IDE
+-- TODO: it expect ai-learning conda environment, we need to make this dynamic
+vim.g.python3_host_prog = "/home/user/miniconda3/envs/ai-learning/bin/python"
+-- nvim.slime configuration to auto detect tmux pane where `jupyter console --kernel=python3` is running.
+vim.g.slime_target = "tmux"
+vim.g.slime_default_config = { socket_name = "default", target_pane = "{last}" }
