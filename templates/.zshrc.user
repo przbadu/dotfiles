@@ -40,5 +40,7 @@ export SUDO_EDITOR="nvim"
 export PATH="/opt/nvim-linux-x86_64/bin:$PATH"
 export PATH="${HOME}/.local/bin:$PATH"
 
+eval "$(~/.local/bin/mise activate)"
+
 . "$HOME/.local/bin/env"
 . "$HOME/apps/base/.venv/bin/activate"
