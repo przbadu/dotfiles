@@ -68,7 +68,9 @@ zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'ls --color $realpath'
 eval "$(zoxide init --cmd cd zsh)"
 
 # Macos
-eval "$(/opt/homebrew/bin/brew shellenv)"
+if [[ $(uname) == "Darwin" ]]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
 
 # Load completions
 autoload -U compinit && compinit
