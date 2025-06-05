@@ -51,29 +51,10 @@ backup_dir() {
 }
 
 # Function to select shell
-select_shell() {
-  log "Select your preferred shell:"
-  log "1) zsh (default)"
-  log "2) bash"
-  read -p "Enter choice [1-2]: " shell_choice
-  shell_choice=${shell_choice:-1}
-
-  case "${shell_choice}" in
-  1)
-    RC_FILE="${HOME}/.zshrc"
-    log "Installing and configuring zsh..."
-    install_zsh
-    ;;
-  2)
-    RC_FILE="${HOME}/.bashrc"
-    log "Using bash with ${RC_FILE}"
-    ;;
-  *)
-    log "Invalid choice '${shell_choice}'. Defaulting to zsh..."
-    RC_FILE="${HOME}/.zshrc"
-    install_zsh
-    ;;
-  esac
+install_and_select_zsh() {
+  RC_FILE="${HOME}/.zshrc"
+  log "Installing and configuring zsh..."
+  install_zsh
 }
 
 # System update and dependencies
@@ -95,18 +76,8 @@ install_zsh() {
     log "Installing zsh..."
     sudo apt install -y zsh
   else
-    warn "zsh already installed, skipping..."
+    warn "zsh already installed, Great!"
   fi
-
-  # Backup existing .zshrc if it exists
-  # if [ -f "${HOME}/.zshrc" ]; then
-  #   log "Backing up existing .zshrc..."
-  #   mv "${HOME}/.zshrc" "${HOME}/.zshrc.backup"
-  # fi
-
-  # Install oh-my-zsh if not already installed
-  log "Installing oh-my-zsh..."
-  sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
 
   # Instead of automatically changing shell, provide instructions
   if [ "$SHELL" != "$(which zsh)" ]; then
@@ -125,7 +96,6 @@ install_zsh() {
 }
 
 # Setup mise
-# Setup mise
 setup_mise() {
   if ! command_exists mise; then
     log "Installing mise..."
@@ -140,11 +110,11 @@ setup_mise() {
 
     # Export PATH and activate mise for current session
     export PATH="${HOME}/.local/bin:$PATH"
-    
+
     # Source mise activation for current session
     if [ -f "${HOME}/.local/bin/mise" ]; then
       eval "$("${HOME}/.local/bin/mise" activate bash)"
-      
+
       # Verify mise is now available
       if ! command_exists mise; then
         error "mise installation failed or not in PATH. Please check installation and try again."
@@ -159,12 +129,9 @@ setup_mise() {
   fi
 }
 
-# Install Ruby and Node.js
-install_languages() {
-  log "Checking Ruby and Node.js installations..."
-
-  # Prompt for versions if not already installed
-  if ! command_exists ruby; then
+install_ruby() {
+  read -p "Would you like to install ruby? (y/N) " response
+  if [[ "$response" =~ ^[Yy]$ ]]; then
     read -p "Enter Ruby version (default: 3): " RUBY_VERSION
     RUBY_VERSION=${RUBY_VERSION:-3}
     log "Installing Ruby ${RUBY_VERSION}..."
@@ -179,16 +146,42 @@ install_languages() {
     else
       warn "gem command not found after Ruby installation, skipping system update"
     fi
-  else
-    warn "Ruby already installed, skipping..."
   fi
+}
 
-  if ! command_exists node; then
-    read -p "Enter Node.js version (default: 22.13.0): " NODE_VERSION
-    NODE_VERSION=${NODE_VERSION:-22.13.0}
+# Lets install node with nvm because (mise install node are causing trouble with MCP servers)
+install_nodejs() {
+  read -p "Would you like to install Nodejs? (y/N) " response
+  if [[ "$response" =~ ^[Yy]$ ]]; then
+    log "Install NVM: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash"
+    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+
+    # Load nvm to the current shell
+    export NVM_DIR="$HOME/.nvm"
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+    read -p "Enter Node.js version (default): " NODE_VERSION
+    NODE_VERSION=${NODE_VERSION:node}
     log "Installing Node.js ${NODE_VERSION}..."
     mise use --global "node@${NODE_VERSION}"
     npm install --global yarn@latest
+  fi
+}
+
+# Install Ruby and Node.js
+install_languages() {
+  log "Checking Ruby and Node.js installations..."
+
+  # Prompt for versions if not already installed
+  if ! command_exists ruby; then
+    install_ruby
+  else
+    warn "Ruby is already installed"
+  fi
+
+  if ! command_exists node; then
+    install_nodejs
   else
     warn "Node.js already installed, skipping..."
   fi
@@ -244,11 +237,11 @@ setup_custom_neovim_config() {
 
   # Copy config files
   log "Copying config files..."
-  cp -r dotfiles/templates/nvim/lua/config/* $HOME/.config/nvim/lua/config/
+  cp -r dotfiles/templates/nvim/lua/config/*.* $HOME/.config/nvim/lua/config/
 
   # Copy plugin files
   log "Copying plugin files..."
-  cp -r dotfiles/templates/nvim/lua/plugins/* $HOME/.config/nvim/lua/plugins/
+  cp -r dotfiles/templates/nvim/lua/plugins/*.* $HOME/.config/nvim/lua/plugins/
 
   # Cleanup
   rm -rf dotfiles
@@ -302,29 +295,15 @@ install_tmux() {
 
 # Copy dotfiles
 copy_dotfiles() {
+  log "Copy .zshrc"
+  curl -sSL https://raw.githubusercontent.com/przbadu/dotfiles/refs/heads/main/templates/.zshrc > $HOME/.zshrc
+
   log "Setup tmux"
 
-  curl -sSL https://raw.githubusercontent.com/przbadu/dotfiles/refs/heads/main/templates/.tmux.conf > .tmux.conf
+  curl -sSL https://raw.githubusercontent.com/przbadu/dotfiles/refs/heads/main/templates/.tmux.conf > $HOME/.tmux.conf
 
   if [ ! -d "${HOME}/.tmux/plugins/tpm" ]; then
     git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
-  fi
-
-  if [[ "${RC_FILE}" == *"zshrc"* ]]; then
-    log "setup ZSH"
-    # zsh-autosuggestions
-    if [ ! -d "${HOME}/.oh-my-zsh/custom/plugins/zsh-autosuggestions" ]; then
-      git clone https://github.com/zsh-users/zsh-autosuggestions ${HOME}/.oh-my-zsh/custom/plugins/zsh-autosuggestions
-    fi
-
-    # zsh-syntax-highlighting
-    if [ ! -d "${HOME}/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting" ]; then
-      git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${HOME}/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting
-    fi
-
-    sed -i 's/plugins=(git)/plugins=(git zsh-autosuggestions zsh-syntax-highlighting)/' "${HOME}/.zshrc"
-    curl -sSL https://raw.githubusercontent.com/przbadu/dotfiles/refs/heads/main/templates/.zshrc > .zshrc.user
-    echo -e "source ~/.zshrc.user" >> "${HOME}/.zshrc"
   fi
 }
 
@@ -333,7 +312,7 @@ main() {
   log "Starting installation process..."
 
   # First, let user select their preferred shell
-  select_shell
+  install_and_select_zsh
 
   install_dependencies
   setup_mise
