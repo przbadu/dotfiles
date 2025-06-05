@@ -58,7 +58,7 @@ install_and_select_zsh() {
 }
 
 # System update and dependencies
-install_dependencies() {
+install_debian_dependencies() {
   log "Checking and installing system dependencies..."
   if ! dpkg -l | grep -q build-essential; then
     log "Installing build-essential and other dependencies..."
@@ -314,17 +314,23 @@ copy_dotfiles() {
 main() {
   log "Starting installation process..."
 
-  # First, let user select their preferred shell
-  install_and_select_zsh
+  # only install debian dependencies if on a Debian-based system
+  if command_exists apt; then 
+    install_debian_dependencies
+    install_lazygit
+    install_tmux
+    # First, let user select their preferred shell
+    install_and_select_zsh
+  else
+    warn "Lazygit, tmux, and other dependencies are only installed on Debian-based systems. You need to install them manually."
+    log "Please make sure you have installed zsh and zsh is your default shell."
+  fi
 
-  install_dependencies
   setup_mise
   install_languages
   configure_git
   install_neovim
   install_lazyvim
-  install_lazygit
-  install_tmux
   copy_dotfiles
 
   log "Installation completed successfully!"
