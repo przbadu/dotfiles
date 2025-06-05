@@ -70,6 +70,8 @@ eval "$(zoxide init --cmd cd zsh)"
 # Macos
 if [[ $(uname) == "Darwin" ]]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
+  eval "$(~/.local/bin/mise activate)"
+  export PGGSSENCMODE="disable"
 fi
 
 # Load completions
