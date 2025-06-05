@@ -295,7 +295,10 @@ install_tmux() {
 
 # Copy dotfiles
 copy_dotfiles() {
-  log "Copy .zshrc"
+  if [ -f "$HOME/.zshrc" ]; then
+    warn "Your $HOME/.zshrc is copied to $HOME/.zshrc.bak"
+    cp $HOME/.zshrc $HOME/.zshrc.bak
+  fi
   curl -sSL https://raw.githubusercontent.com/przbadu/dotfiles/refs/heads/main/templates/.zshrc > $HOME/.zshrc
 
   log "Setup tmux"
