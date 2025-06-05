@@ -63,15 +63,15 @@ zstyle ':completion:*' menu no
 zstyle ':fzf-tab:complete:cd:*' fzf-preview 'ls --color $realpath'
 zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'ls --color $realpath'
 
-# Shell integrations
-# eval "$(fzf --zsh)"
-eval "$(zoxide init --cmd cd zsh)"
-
 # Macos
 if [[ $(uname) == "Darwin" ]]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
   eval "$(~/.local/bin/mise activate)"
   export PGGSSENCMODE="disable"
+else
+  # Shell integrations
+  # eval "$(fzf --zsh)"
+  eval "$(zoxide init --cmd cd zsh)"
 fi
 
 # Load completions
