@@ -39,8 +39,12 @@ zinit snippet OMZP::command-not-found
 # ctrl+p/n -> previous/next suggestions (cycle through)
 # ctrl+a/e -> jump to start/end of the line
 bindkey -e # emacs keybindings to use ctrl+n/p/a
-bindkey '^p' history-search-backward
-bindkey '^p' history-search-forward
+
+# Filter through line or search result from history
+bindkey '^p' up-line-or-search
+bindkey '^n' down-line-or-search
+bindkey '^[[A' up-line-or-search                                                
+bindkey '^[[B' down-line-or-search
 
 ### Other configs
 # History
