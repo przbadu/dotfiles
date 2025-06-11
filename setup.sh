@@ -12,6 +12,12 @@ NC='\033[0m' # No Color
 # Global RC_FILE variable (will be set based on shell choice)
 RC_FILE=""
 
+# Global arrays to track installations and backups for rollback
+INSTALLED_PACKAGES=()
+CREATED_BACKUPS=()
+TEMP_DIRECTORIES=()
+INSTALLED_BINARIES=()
+
 # Function to log messages
 log() {
   echo -e "[$(date +'%Y-%m-%d %H:%M:%S')] ${GREEN}$1${NC}"
@@ -78,11 +84,76 @@ backup_dir() {
     if ! dir_exists "${dir}.bak"; then
       log "Backing up ${dir} to ${dir}.bak"
       mv "$dir" "${dir}.bak"
+      CREATED_BACKUPS+=("$dir")
     else
       warn "Backup ${dir}.bak already exists, skipping backup"
     fi
   fi
 }
+
+# Function to add temp directory for cleanup tracking
+track_temp_dir() {
+  local temp_dir="$1"
+  TEMP_DIRECTORIES+=("$temp_dir")
+}
+
+# Function to track installed binary for rollback
+track_installed_binary() {
+  local binary_path="$1"
+  INSTALLED_BINARIES+=("$binary_path")
+}
+
+# Function to cleanup temporary directories
+cleanup_temp_dirs() {
+  for temp_dir in "${TEMP_DIRECTORIES[@]}"; do
+    if [ -d "$temp_dir" ]; then
+      log "Cleaning up temporary directory: $temp_dir"
+      rm -rf "$temp_dir"
+    fi
+  done
+  TEMP_DIRECTORIES=()
+}
+
+# Function to rollback installations on failure
+rollback_installation() {
+  error "Installation failed, attempting rollback..."
+  
+  # Remove installed binaries
+  for binary in "${INSTALLED_BINARIES[@]}"; do
+    if [ -f "$binary" ]; then
+      log "Removing installed binary: $binary"
+      sudo rm -f "$binary" 2>/dev/null || warn "Could not remove $binary"
+    fi
+  done
+  
+  # Restore backups
+  for backup_dir in "${CREATED_BACKUPS[@]}"; do
+    if dir_exists "${backup_dir}.bak" && ! dir_exists "$backup_dir"; then
+      log "Restoring backup: ${backup_dir}.bak -> $backup_dir"
+      mv "${backup_dir}.bak" "$backup_dir"
+    fi
+  done
+  
+  # Cleanup temp directories
+  cleanup_temp_dirs
+  
+  log "Rollback completed"
+}
+
+# Function to handle script exit with cleanup
+cleanup_on_exit() {
+  local exit_code=$?
+  if [ $exit_code -ne 0 ]; then
+    warn "Script exited with error code $exit_code"
+    rollback_installation
+  else
+    cleanup_temp_dirs
+  fi
+  exit $exit_code
+}
+
+# Set up exit trap for cleanup
+trap cleanup_on_exit EXIT INT TERM
 
 # Function to select shell
 install_and_select_zsh() {
@@ -125,6 +196,7 @@ setup_mise() {
 
     # Create temporary directory for secure installation
     local temp_dir=$(mktemp -d)
+    track_temp_dir "$temp_dir"
     cd "$temp_dir"
 
     # Download mise installation script for inspection
@@ -137,17 +209,12 @@ setup_mise() {
         ./mise-install.sh
       else
         error "Downloaded mise installer does not appear to be a valid shell script"
-        rm -rf "$temp_dir"
         return 1
       fi
     else
       error "Failed to download mise installation script"
-      rm -rf "$temp_dir"
       return 1
     fi
-
-    # Cleanup temp directory
-    rm -rf "$temp_dir"
 
     # Get shell name from RC_FILE
     local shell_name=$(basename "${RC_FILE}" | sed 's/\.[^.]*$//')
@@ -220,17 +287,12 @@ install_nodejs() {
         ./nvm-install.sh
       else
         error "Downloaded NVM installer does not appear to be a valid shell script"
-        rm -rf "$temp_dir"
         return 1
       fi
     else
       error "Failed to download NVM installation script"
-      rm -rf "$temp_dir"
       return 1
     fi
-
-    # Cleanup temp directory
-    rm -rf "$temp_dir"
 
     # Load nvm to the current shell
     export NVM_DIR="$HOME/.nvm"
@@ -303,6 +365,7 @@ setup_custom_neovim_config() {
 
   # Create temporary directory for downloads
   local temp_dir=$(mktemp -d)
+  track_temp_dir "$temp_dir"
   cd "$temp_dir"
 
   # Download and extract templates
@@ -414,6 +477,7 @@ install_lazygit() {
             log "Checksum verified, proceeding with installation..."
             tar xf lazygit.tar.gz lazygit
             sudo install lazygit -D -t /usr/local/bin/
+            track_installed_binary "/usr/local/bin/lazygit"
             log "lazygit installed successfully"
           else
             error "Checksum verification failed, aborting installation"
@@ -424,11 +488,13 @@ install_lazygit() {
           warn "Could not find checksum for lazygit binary, proceeding without verification"
           tar xf lazygit.tar.gz lazygit
           sudo install lazygit -D -t /usr/local/bin/
+          track_installed_binary "/usr/local/bin/lazygit"
         fi
       else
         warn "Could not download checksums, proceeding without verification"
         tar xf lazygit.tar.gz lazygit
         sudo install lazygit -D -t /usr/local/bin/
+        track_installed_binary "/usr/local/bin/lazygit"
       fi
 
       # Cleanup
