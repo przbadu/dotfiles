@@ -158,8 +158,8 @@ install_nodejs() {
 
     # Load nvm to the current shell
     export NVM_DIR="$HOME/.nvm"
-    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+    [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"                   # This loads nvm
+    [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" # This loads nvm bash_completion
 
     read -p "Enter Node.js version (default): " NODE_VERSION
     NODE_VERSION=${NODE_VERSION:node}
@@ -308,7 +308,8 @@ copy_dotfiles() {
   cd ~/dotfiles/
 
   log "Symlinking dotfiles"
-  stow .
+  # update existing files
+  stow --adapt --ignore=setup .
 
   if [ ! -d "${HOME}/.tmux/plugins/tpm" ]; then
     log "Install tmux package manager inside ~/.tmux/plugins/tpm"
@@ -321,7 +322,7 @@ main() {
   log "Starting installation process..."
 
   # only install debian dependencies if on a Debian-based system
-  if command_exists apt; then 
+  if command_exists apt; then
     install_debian_dependencies
     install_lazygit
     install_tmux
