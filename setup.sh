@@ -38,6 +38,36 @@ command_exists() {
   command -v "$1" >/dev/null 2>&1
 }
 
+# Function to check if we need sudo for a command
+need_sudo() {
+  # If we're already root, no need for sudo
+  if [ "$EUID" -eq 0 ]; then
+    return 1
+  fi
+
+  # Check if sudo is available
+  if ! command_exists sudo; then
+    error "This script requires sudo privileges for package installation, but sudo is not available"
+    error "Please run as root or install sudo"
+    return 2
+  fi
+
+  return 0
+}
+
+# Function to run command with sudo only if needed
+run_with_sudo() {
+  if need_sudo; then
+    local sudo_status=$?
+    if [ $sudo_status -eq 2 ]; then
+      return 1
+    fi
+    sudo "$@"
+  else
+    "$@"
+  fi
+}
+
 # Function to check network connectivity
 check_network() {
   local test_urls=("github.com" "raw.githubusercontent.com" "api.github.com")
@@ -170,7 +200,7 @@ rollback_installation() {
   for binary in "${INSTALLED_BINARIES[@]}"; do
     if [ -f "$binary" ]; then
       log "Removing installed binary: $binary"
-      sudo rm -f "$binary" 2>/dev/null || warn "Could not remove $binary"
+      run_with_sudo rm -f "$binary" 2>/dev/null || warn "Could not remove $binary"
     fi
   done
 
@@ -224,13 +254,17 @@ install_zsh() {
   # Instead of automatically changing shell, provide instructions
   if [ "$SHELL" != "$(which zsh)" ]; then
     log "To set zsh as your default shell, run:"
-    echo "sudo chsh -s $(which zsh) $USER"
+    if [ "$EUID" -eq 0 ]; then
+      echo "chsh -s $(which zsh) $USER"
+    else
+      echo "sudo chsh -s $(which zsh) $USER"
+    fi
 
     # Prompt user if they want to change shell now
     read -p "Would you like to change your default shell to zsh now? (y/N) " response
     if [[ "$response" =~ ^[Yy]$ ]]; then
       log "Changing default shell to zsh..."
-      sudo chsh -s "$(which zsh)" "$USER"
+      run_with_sudo chsh -s "$(which zsh)" "$USER"
     else
       log "Skipping shell change. You can change it later using the command above."
     fi
@@ -547,7 +581,7 @@ install_lazygit() {
           if verify_checksum "lazygit.tar.gz" "$expected_checksum"; then
             log "Checksum verified, proceeding with installation..."
             tar xf lazygit.tar.gz lazygit
-            sudo install lazygit -D -t /usr/local/bin/
+            run_with_sudo install lazygit -D -t /usr/local/bin/
             track_installed_binary "/usr/local/bin/lazygit"
             log "lazygit installed successfully"
           else
@@ -659,12 +693,12 @@ install_ubuntu_packages() {
 
   # Update package list
   log "Updating package list..."
-  sudo apt update
+  run_with_sudo apt update
 
   # Install snapd if not present
   if ! command_exists snap; then
     log "Installing snapd..."
-    sudo apt install -y snapd
+    run_with_sudo apt install -y snapd
   fi
 
   # Read packages from file and install
@@ -681,15 +715,21 @@ install_ubuntu_packages() {
     # Check if it's a safe custom command (only allow specific package managers)
     elif [[ "$line" =~ ^(sudo apt |snap install |apt install ).* ]]; then
       log "Executing package command: $line"
-      eval "$line" || warn "Failed to execute package command: $line"
+      # Replace sudo with run_with_sudo in the command
+      local safe_command=$(echo "$line" | sed 's/^sudo //')
+      if [[ "$line" =~ ^sudo ]]; then
+        eval "run_with_sudo $safe_command" || warn "Failed to execute package command: $line"
+      else
+        eval "$line" || warn "Failed to execute package command: $line"
+      fi
     # Check if it's a snap package
     elif [[ "$line" =~ ^snap: ]]; then
       package=$(echo "$line" | sed 's/^snap: *//')
       log "Installing snap package: $package"
-      sudo snap install $package || warn "Failed to install snap package: $package"
+      run_with_sudo snap install $package || warn "Failed to install snap package: $package"
     else
       log "Installing apt package: $line"
-      sudo apt install -y "$line" || warn "Failed to install apt package: $line"
+      run_with_sudo apt install -y "$line" || warn "Failed to install apt package: $line"
     fi
   done <"$packages_file"
 }
@@ -743,9 +783,42 @@ copy_dotfiles() {
   fi
 }
 
+# Check system privileges and requirements
+check_system_requirements() {
+  log "Checking system requirements..."
+
+  # Check if we're running on a supported system
+  local os=$(detect_os)
+  if [ "$os" = "unknown" ]; then
+    error "Unsupported operating system. This script supports macOS and Ubuntu/Debian only."
+    return 1
+  fi
+
+  # Warn about privilege requirements for package installation
+  if [ "$os" = "ubuntu" ] && need_sudo; then
+    local sudo_status=$?
+    if [ $sudo_status -eq 2 ]; then
+      return 1
+    fi
+    log "This script will require sudo privileges for package installation"
+    log "You may be prompted for your password during the installation process"
+  elif [ "$os" = "ubuntu" ] && [ "$EUID" -eq 0 ]; then
+    log "Running as root - sudo will not be used for package installation"
+  fi
+
+  log "System requirements check passed"
+  return 0
+}
+
 # Main installation process
 main() {
   log "Starting installation process..."
+
+  # Check system requirements first
+  if ! check_system_requirements; then
+    error "System requirements check failed. Exiting."
+    exit 1
+  fi
 
   # Install packages from packages.txt first
   install_packages
