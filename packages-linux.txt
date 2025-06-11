@@ -46,4 +46,4 @@ snap: pgadmin4
 
 ## Custom installation commands
 # Custom commands for packages requiring special installation
-sudo add-apt-repository universe -y && sudo add-apt-repository ppa:agornostal/ulauncher -y && sudo apt update && sudo apt install ulauncher -y
+sudo apt install software-properties-common -y && sudo add-apt-repository universe -y && sudo add-apt-repository ppa:agornostal/ulauncher -y && sudo apt update && sudo apt install ulauncher -y
