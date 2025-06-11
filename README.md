@@ -7,12 +7,14 @@ This repository contains dotfiles and setup scripts for automated development en
 - Automated setup script for development environment
 - Package lists for Linux (Ubuntu/Debian) and macOS
 - GNU Stow-based dotfiles management
+- CLI-only mode for servers and LXC containers
 - Development tools installation:
   - mise (version manager)
   - Ruby, Node.js
   - Git configuration
   - Neovim with LazyVim
   - Lazygit
+  - JetBrains Mono Nerd Font
 - Idempotent installation (safe to run multiple times)
 - Automatic backup of existing configurations
 
@@ -28,17 +30,33 @@ This repository contains dotfiles and setup scripts for automated development en
 ### Option 1: Direct Installation (Recommended)
 
 ```bash
-#### Only for linux user, make sure to install zsh and use zsh before running script
-sudo apt install zsh # only for linux user
-zsh # only for linux user
+# Install zsh first (Ubuntu/Debian only - macOS already has zsh)
+sudo apt install zsh
 
 # Clone the repository
 git clone https://github.com/przbadu/dotfiles.git ~/.dotfiles
 cd ~/.dotfiles
 
-# Run the setup script
-./setup.sh
+# Run the setup script with zsh (recommended)
+zsh ./setup.sh
+
+# Or for CLI-only installation (servers/LXC containers)
+zsh ./setup.sh --cli-only
 ```
+
+### CLI-Only Installation
+
+Perfect for servers, LXC containers, or headless systems where you don't need GUI applications:
+
+```bash
+# Install only CLI tools (skips GUI apps like browsers, editors, etc.)
+zsh ./setup.sh --cli-only
+```
+
+**What gets skipped in CLI-only mode:**
+- Ubuntu: All `snap:` packages (flameshot, slack, firefox, etc.)
+- macOS: All `cask:` packages (browsers, GUI apps)
+- snapd installation is skipped on Ubuntu
 
 ### Option 2: Remote Installation
 
@@ -55,16 +73,19 @@ We encourage users to inspect the script before running it.
 curl -sSL https://raw.githubusercontent.com/przbadu/dotfiles/main/setup.sh > setup.sh
 # Review the content please...
 chmod +x setup.sh
-./setup.sh
+zsh setup.sh
+
+# For CLI-only installation
+zsh setup.sh --cli-only
 
 # Clean up after successful completion
 rm setup.sh
 ```
 
-**Direct approach (if you already have zsh or want to use bash):**
+**Direct approach (if you already have zsh):**
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/przbadu/dotfiles/main/setup.sh | bash
+curl -sSL https://raw.githubusercontent.com/przbadu/dotfiles/main/setup.sh | zsh
 ```
 
 ### Option 3: Manual Package Installation
@@ -85,7 +106,20 @@ During installation, you'll be prompted to configure:
 
 - Git username and email (if not already configured)
 - Ruby version (default: 3)
-- Node.js version (default: 22.13.0)
+- Node.js version (default: latest)
+
+### Command Line Options
+
+```bash
+# Show help
+zsh ./setup.sh --help
+
+# Full installation (default)
+zsh ./setup.sh
+
+# CLI-only installation (no GUI apps)
+zsh ./setup.sh --cli-only
+```
 
 ### Running with Different Privileges
 
@@ -97,10 +131,13 @@ The script automatically detects your privilege level and uses sudo only when ne
 
 ```bash
 # As regular user (recommended)
-./setup.sh
+zsh ./setup.sh
+
+# CLI-only for servers/containers
+zsh ./setup.sh --cli-only
 
 # As root user (Linux containers/servers)
-sudo ./setup.sh
+sudo zsh ./setup.sh
 ```
 
 ## What Gets Installed
@@ -111,9 +148,13 @@ sudo ./setup.sh
 - Essential build tools (build-essential, rustc)
 - Development libraries (libssl-dev, libyaml-dev, zlib1g-dev, libgmp-dev)
 - System utilities and tools
+- JetBrains Mono Nerd Font (fonts-jetbrains-mono)
+- GUI applications via snap (skipped with --cli-only)
 
 **macOS (packages-macos.txt):**
 - Development tools and utilities via Homebrew
+- JetBrains Mono Nerd Font (font-jetbrains-mono-nerd-font)
+- GUI applications via brew casks (skipped with --cli-only)
 - Compatible macOS equivalents of Linux packages
 
 ### Development Tools
@@ -187,22 +228,25 @@ Before running the full installation, especially after making changes to the scr
 
 **1. Syntax Check First:**
 ```bash
-bash -n setup.sh
+zsh -n setup.sh
 ```
 
 **2. Test Individual Functions:**
 ```bash
 # Test network connectivity
-bash -c 'source setup.sh; check_network'
+zsh -c 'source setup.sh; check_network'
 
 # Test OS and architecture detection
-bash -c 'source setup.sh; echo "OS: $(detect_os)"; echo "Arch: $(detect_arch)"'
+zsh -c 'source setup.sh; echo "OS: $(detect_os)"; echo "Arch: $(detect_arch)"'
 
 # Test sudo handling
-bash -c 'source setup.sh; need_sudo && echo "Needs sudo" || echo "No sudo needed"'
+zsh -c 'source setup.sh; need_sudo && echo "Needs sudo" || echo "No sudo needed"'
 
 # Test system requirements check
-bash -c 'source setup.sh; check_system_requirements'
+zsh -c 'source setup.sh; check_system_requirements'
+
+# Test CLI-only flag
+zsh -c 'source setup.sh; parse_args --cli-only; echo "CLI_ONLY: $CLI_ONLY"'
 ```
 
 **3. Safe Testing Environments:**

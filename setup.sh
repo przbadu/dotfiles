@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env zsh
 
 # Exit on error
 set -e
@@ -12,11 +12,48 @@ NC='\033[0m' # No Color
 # Global RC_FILE variable (will be set based on shell choice)
 RC_FILE=""
 
+# Global flag for CLI-only installation
+CLI_ONLY=false
+
 # Global arrays to track installations and backups for rollback
 INSTALLED_PACKAGES=()
 CREATED_BACKUPS=()
 TEMP_DIRECTORIES=()
 INSTALLED_BINARIES=()
+
+# Function to show help
+show_help() {
+  echo "Usage: $0 [OPTIONS]"
+  echo ""
+  echo "Options:"
+  echo "  --cli-only    Skip GUI applications (useful for LXC containers)"
+  echo "  --help        Show this help message"
+  echo ""
+  echo "Examples:"
+  echo "  $0                # Full installation with GUI apps"
+  echo "  $0 --cli-only     # CLI tools only (no GUI apps)"
+}
+
+# Function to parse command line arguments
+parse_args() {
+  while [[ $# -gt 0 ]]; do
+    case $1 in
+      --cli-only)
+        CLI_ONLY=true
+        shift
+        ;;
+      --help|-h)
+        show_help
+        exit 0
+        ;;
+      *)
+        echo "Unknown option: $1"
+        show_help
+        exit 1
+        ;;
+    esac
+  done
+}
 
 # Function to log messages
 log() {
@@ -677,6 +714,10 @@ install_macos_packages() {
       warn "$warning_msg"
     # Check if it's a cask package (GUI)
     elif [[ "$line" =~ ^cask: ]]; then
+      if [ "$CLI_ONLY" = true ]; then
+        log "Skipping GUI app (--cli-only): $line"
+        continue
+      fi
       package=$(echo "$line" | sed 's/^cask: *//')
       log "Installing cask: $package"
       brew install --cask "$package" || warn "Failed to install cask: $package"
@@ -695,8 +736,8 @@ install_ubuntu_packages() {
   log "Updating package list..."
   run_with_sudo apt update
 
-  # Install snapd if not present
-  if ! command_exists snap; then
+  # Install snapd if not present and not CLI-only mode
+  if ! command_exists snap && [ "$CLI_ONLY" = false ]; then
     log "Installing snapd..."
     run_with_sudo apt install -y snapd
   fi
@@ -714,6 +755,11 @@ install_ubuntu_packages() {
       warn "$warning_msg"
     # Check if it's a safe custom command (only allow specific package managers)
     elif [[ "$line" =~ ^(sudo apt |snap install |apt install ).* ]]; then
+      # Skip snap commands in CLI-only mode
+      if [[ "$line" =~ snap ]] && [ "$CLI_ONLY" = true ]; then
+        log "Skipping GUI app command (--cli-only): $line"
+        continue
+      fi
       log "Executing package command: $line"
       # Replace sudo with run_with_sudo in the command
       local safe_command=$(echo "$line" | sed 's/^sudo //')
@@ -724,6 +770,10 @@ install_ubuntu_packages() {
       fi
     # Check if it's a snap package
     elif [[ "$line" =~ ^snap: ]]; then
+      if [ "$CLI_ONLY" = true ]; then
+        log "Skipping GUI app (--cli-only): $line"
+        continue
+      fi
       package=$(echo "$line" | sed 's/^snap: *//')
       log "Installing snap package: $package"
       run_with_sudo snap install $package || warn "Failed to install snap package: $package"
@@ -826,7 +876,14 @@ check_system_requirements() {
 
 # Main installation process
 main() {
-  log "Starting installation process..."
+  # Parse command line arguments
+  parse_args "$@"
+
+  if [ "$CLI_ONLY" = true ]; then
+    log "Starting CLI-only installation process..."
+  else
+    log "Starting full installation process..."
+  fi
 
   # Check system requirements first
   if ! check_system_requirements; then
@@ -863,4 +920,4 @@ main() {
 }
 
 # Run the script
-main
+main "$@"
