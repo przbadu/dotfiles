@@ -283,12 +283,6 @@ install_lazygit() {
   fi
 }
 
-# Install and setup tmux
-install_tmux() {
-  log "Installing tmux..."
-  sudo apt install tmux -y
-}
-
 # Install packages from OS-specific package files
 install_packages() {
   local os=$(detect_os)
@@ -451,14 +445,6 @@ main() {
 
   # Install OS-specific packages
   install_lazygit
-
-  # only install debian-specific packages if on a Debian-based system
-  if command_exists apt; then
-    install_tmux
-  else
-    warn "tmux is only installed on Debian-based systems. You need to install it manually."
-  fi
-
   setup_mise
   install_languages
   configure_git
