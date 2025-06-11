@@ -72,15 +72,15 @@ install_and_select_zsh() {
   install_zsh
 }
 
-
-# Install zsh and oh-my-zsh
+# Configure zsh as default shell
 install_zsh() {
   log "Checking zsh installation..."
   if ! command_exists zsh; then
-    log "Installing zsh..."
-    sudo apt install -y zsh
+    warn "zsh not found! It should be installed via package manager."
+    warn "Please ensure zsh is in your packages file and re-run the script."
+    return 1
   else
-    warn "zsh already installed, Great!"
+    log "zsh already installed, Great!"
   fi
 
   # Instead of automatically changing shell, provide instructions
@@ -454,15 +454,15 @@ main() {
   # Install packages from packages.txt first
   install_packages
 
+  # Configure zsh as default shell (zsh installed via package manager)
+  install_and_select_zsh
+
   # only install debian-specific packages if on a Debian-based system
   if command_exists apt; then
     install_lazygit
     install_tmux
-    # First, let user select their preferred shell
-    install_and_select_zsh
   else
-    warn "Lazygit, tmux, and other dependencies are only installed on Debian-based systems. You need to install them manually."
-    log "Please make sure you have installed zsh and zsh is your default shell."
+    warn "Lazygit and tmux are only installed on Debian-based systems. You need to install them manually."
   fi
 
   setup_mise
