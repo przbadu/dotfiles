@@ -297,15 +297,21 @@ install_tmux() {
 copy_dotfiles() {
   if [ -f "$HOME/.zshrc" ]; then
     warn "Your $HOME/.zshrc is copied to $HOME/.zshrc.bak"
-    cp $HOME/.zshrc $HOME/.zshrc.bak
+    mv $HOME/.zshrc $HOME/.zshrc.bak
   fi
-  curl -sSL https://raw.githubusercontent.com/przbadu/dotfiles/refs/heads/main/templates/.zshrc > $HOME/.zshrc
 
-  log "Setup tmux"
+  log "Installing stow to symlink dotfiles"
+  sudo apt install -y stow
 
-  curl -sSL https://raw.githubusercontent.com/przbadu/dotfiles/refs/heads/main/templates/.tmux.conf > $HOME/.tmux.conf
+  log "Cloning dotfiles to ~/dotfiles"
+  git clone git@github.com:przbadu/dotfiles.git ~/dotfiles
+  cd ~/dotfiles/
+
+  log "Symlinking dotfiles"
+  stow .
 
   if [ ! -d "${HOME}/.tmux/plugins/tpm" ]; then
+    log "Install tmux package manager inside ~/.tmux/plugins/tpm"
     git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
   fi
 }
