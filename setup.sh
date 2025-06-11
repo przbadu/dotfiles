@@ -72,17 +72,6 @@ install_and_select_zsh() {
   install_zsh
 }
 
-# System update and dependencies
-install_debian_dependencies() {
-  log "Checking and installing system dependencies..."
-  if ! dpkg -l | grep -q build-essential; then
-    log "Installing build-essential and other dependencies..."
-    sudo apt update
-    sudo apt install -y build-essential rustc libssl-dev libyaml-dev zlib1g-dev libgmp-dev libpq-dev tmux
-  else
-    warn "Dependencies already installed, skipping..."
-  fi
-}
 
 # Install zsh and oh-my-zsh
 install_zsh() {
@@ -465,9 +454,8 @@ main() {
   # Install packages from packages.txt first
   install_packages
 
-  # only install debian dependencies if on a Debian-based system
+  # only install debian-specific packages if on a Debian-based system
   if command_exists apt; then
-    install_debian_dependencies
     install_lazygit
     install_tmux
     # First, let user select their preferred shell

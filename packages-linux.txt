@@ -17,6 +17,13 @@ fd-find
 bat
 gh
 build-essential
+rustc
+libssl-dev
+libyaml-dev
+zlib1g-dev
+libgmp-dev
+libpq-dev
+tmux
 software-properties-common
 apt-transport-https
 ca-certificates
