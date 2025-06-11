@@ -36,6 +36,7 @@ timeshift
 sqlite3
 libpq-dev
 postgresql
+fonts-jetbrains-mono
 
 ## GUI Applications (snap)
 snap: flameshot
