@@ -433,25 +433,20 @@ copy_dotfiles() {
   # Handle existing dotfiles directory
   if [ -d "$HOME/dotfiles" ]; then
     warn "Existing dotfiles directory found at $HOME/dotfiles"
-    if [ ! -d "$HOME/dotfiles-bak" ]; then
-      log "Moving existing dotfiles to $HOME/dotfiles-bak"
-      mv "$HOME/dotfiles" "$HOME/dotfiles-bak"
-    else
-      warn "Backup directory $HOME/dotfiles-bak already exists"
-      log "Removing existing dotfiles directory to proceed with fresh clone"
-      rm -rf "$HOME/dotfiles"
+    warn "To get the latest files from remote, please run 'git pull' inside the dotfiles directory and re-run this script"
+    log "Using existing dotfiles to symlink"
+    cd "$HOME/dotfiles"
+  else
+    # Backup existing .zshrc if it exists
+    if [ -f "$HOME/.zshrc" ]; then
+      warn "Your $HOME/.zshrc is copied to $HOME/.zshrc.bak"
+      mv "$HOME/.zshrc" "$HOME/.zshrc.bak"
     fi
-  fi
 
-  # Backup existing .zshrc if it exists
-  if [ -f "$HOME/.zshrc" ]; then
-    warn "Your $HOME/.zshrc is copied to $HOME/.zshrc.bak"
-    mv "$HOME/.zshrc" "$HOME/.zshrc.bak"
+    log "Cloning dotfiles to ~/dotfiles"
+    git clone git@github.com:przbadu/dotfiles.git ~/dotfiles
+    cd "$HOME/dotfiles"
   fi
-
-  log "Cloning dotfiles to ~/dotfiles"
-  git clone git@github.com:przbadu/dotfiles.git ~/dotfiles
-  cd ~/dotfiles/
 
   log "Symlinking dotfiles"
   # update existing files
@@ -490,6 +485,8 @@ main() {
   copy_dotfiles
 
   log "Installation completed successfully!"
+
+  log "If you prefer to run docker without sudo you can run following commands:\nsudo groupadd docker && sudo usermod -aG docker $USER && newgrp docker\n\n"
 
   # Show appropriate completion message based on shell choice
   if [[ "${RC_FILE}" == *"zshrc"* ]]; then
