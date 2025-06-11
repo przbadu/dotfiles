@@ -34,6 +34,7 @@ gnupg
 neofetch
 stow
 timeshift
+sqlite3
 
 ## GUI Applications (snap)
 snap: flameshot
