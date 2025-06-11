@@ -1,0 +1,85 @@
+# Dotfiles Setup Script Improvement Tasks
+
+## Medium Priority Tasks
+
+### Task #7: Align package selections between macOS and Linux platforms
+- Review package differences between packages-macos.txt and packages-linux.txt
+- Add missing packages to achieve feature parity
+- Document platform-specific alternatives where exact matches aren't available
+- Ensure consistent development environment across both platforms
+
+### Task #8: Move hardcoded values to external configuration files
+- Create config.sh file for version numbers (NVM, Ruby, Node.js versions)
+- Extract URLs and endpoints to configuration
+- Make timeout values configurable
+- Allow users to customize installation preferences
+- Add environment variable overrides
+
+### Task #9: Add verbosity levels and enhanced logging system
+- Implement --verbose and --quiet flags
+- Add debug logging level for troubleshooting
+- Color-coded log levels (ERROR=red, WARN=yellow, INFO=green, DEBUG=blue)
+- Log file output option for debugging
+- Progress indicators for long operations
+
+### Task #10: Add support for other Linux distributions (Fedora, Arch, CentOS)
+- Extend detect_os() function for more distributions
+- Add package installation logic for dnf (Fedora/RHEL)
+- Add package installation logic for pacman (Arch)
+- Add package installation logic for yum (CentOS)
+- Create distribution-specific package files
+
+### Task #11: Add dry-run mode for testing installations
+- Implement --dry-run flag
+- Show what would be installed without making changes
+- Validate all prerequisites and dependencies
+- Display download sizes and disk space requirements
+- Allow users to preview changes before execution
+
+### Task #12: Add validation mode to check system requirements
+- Check minimum OS versions
+- Verify available disk space
+- Check for conflicting software
+- Validate required system dependencies
+- Pre-flight checks for common issues
+
+## Low Priority Tasks
+
+### Task #13: Refactor code to separate concerns and reduce coupling
+- Split script into multiple modules (network.sh, packages.sh, languages.sh)
+- Create shared utility functions
+- Implement consistent error handling patterns
+- Reduce global variable dependencies
+- Improve code organization and maintainability
+
+### Task #14: Add comprehensive troubleshooting guide to documentation
+- Document common installation issues and solutions
+- Add FAQ section to README
+- Create troubleshooting scripts for common problems
+- Add debugging commands and log analysis
+- Include platform-specific gotchas
+
+### Task #15: Add CI/CD pipeline for automated script validation
+- Create GitHub Actions workflow
+- Test script on multiple OS versions (Ubuntu 20.04, 22.04, macOS 12, 13, 14)
+- Test on different architectures (x86_64, ARM64)
+- Validate package file syntax
+- Run shellcheck and other linting tools
+- Test rollback mechanisms
+- Performance benchmarking
+
+## Completed High Priority Tasks ✅
+
+- ✅ Task #1: Add checksum verification for downloaded binaries
+- ✅ Task #2: Remove curl | sh executions and add secure installation methods
+- ✅ Task #3: Remove eval of arbitrary commands from package files
+- ✅ Task #4: Add ARM64/Apple Silicon architecture detection and support
+- ✅ Task #5: Add rollback and cleanup mechanisms for failed installations
+- ✅ Task #6: Add network connectivity checks before downloads
+
+## Notes
+
+- All high-priority security and reliability improvements have been completed
+- The script now has robust error handling, rollback mechanisms, and security features
+- Medium and low priority tasks focus on user experience, platform support, and maintainability
+- Tasks can be worked on independently in any order based on project priorities
