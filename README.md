@@ -20,7 +20,7 @@ This repository contains dotfiles and setup scripts for automated development en
 
 - Linux (Ubuntu/Debian) or macOS
 - Internet connection
-- Sudo privileges for package installation
+- Sudo privileges for package installation (or run as root on Linux)
 
 
 ## Installation
@@ -82,6 +82,22 @@ During installation, you'll be prompted to configure:
 - Git username and email (if not already configured)
 - Ruby version (default: 3)
 - Node.js version (default: 22.13.0)
+
+### Running with Different Privileges
+
+The script automatically detects your privilege level and uses sudo only when necessary:
+
+- **Regular user**: Script will use `sudo` for package installations
+- **Root user**: Script runs directly without `sudo` (Linux only)
+- **No sudo available**: Script will show clear error messages
+
+```bash
+# As regular user (recommended)
+./setup.sh
+
+# As root user (Linux containers/servers)
+sudo ./setup.sh
+```
 
 ## What Gets Installed
 
