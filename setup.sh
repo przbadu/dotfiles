@@ -52,6 +52,25 @@ detect_os() {
   fi
 }
 
+# Function to detect system architecture
+detect_arch() {
+  local arch=$(uname -m)
+  case "$arch" in
+  x86_64 | amd64)
+    echo "x86_64"
+    ;;
+  aarch64 | arm64)
+    echo "arm64"
+    ;;
+  armv7l)
+    echo "armv7"
+    ;;
+  *)
+    echo "unknown"
+    ;;
+  esac
+}
+
 # Function to backup a directory if it exists
 backup_dir() {
   local dir=$1
@@ -357,19 +376,39 @@ install_lazygit() {
     local os=$(detect_os)
     if [ "$os" = "ubuntu" ]; then
       log "Installing lazygit for Ubuntu..."
+      local arch=$(detect_arch)
+
+      # Map architecture to lazygit naming convention
+      local lazygit_arch
+      case "$arch" in
+      x86_64)
+        lazygit_arch="Linux_x86_64"
+        ;;
+      arm64)
+        lazygit_arch="Linux_arm64"
+        ;;
+      armv7)
+        lazygit_arch="Linux_armv6"
+        ;;
+      *)
+        error "Unsupported architecture: $arch"
+        return 1
+        ;;
+      esac
+
       LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | grep -Po '"tag_name": *"v\K[^"]*')
 
       # Download lazygit binary
-      local lazygit_url="https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
+      local lazygit_url="https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_${lazygit_arch}.tar.gz"
       local checksum_url="https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/checksums.txt"
 
-      log "Downloading lazygit v${LAZYGIT_VERSION}..."
+      log "Downloading lazygit v${LAZYGIT_VERSION} for ${lazygit_arch}..."
       curl -Lo lazygit.tar.gz "$lazygit_url"
 
       # Download and verify checksum
       log "Downloading checksums for verification..."
       if curl -sL "$checksum_url" -o checksums.txt; then
-        local expected_checksum=$(grep "lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz" checksums.txt | cut -d' ' -f1)
+        local expected_checksum=$(grep "lazygit_${LAZYGIT_VERSION}_${lazygit_arch}.tar.gz" checksums.txt | cut -d' ' -f1)
         if [ -n "$expected_checksum" ]; then
           if verify_checksum "lazygit.tar.gz" "$expected_checksum"; then
             log "Checksum verified, proceeding with installation..."
