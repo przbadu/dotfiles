@@ -103,7 +103,32 @@ install_zsh() {
 setup_mise() {
   if ! command_exists mise; then
     log "Installing mise..."
-    curl https://mise.run | sh
+
+    # Create temporary directory for secure installation
+    local temp_dir=$(mktemp -d)
+    cd "$temp_dir"
+
+    # Download mise installation script for inspection
+    log "Downloading mise installation script..."
+    if curl -fsSL https://mise.run -o mise-install.sh; then
+      # Basic security check - verify it's a shell script
+      if head -1 mise-install.sh | grep -q "^#!/.*sh"; then
+        log "Installing mise from downloaded script..."
+        chmod +x mise-install.sh
+        ./mise-install.sh
+      else
+        error "Downloaded mise installer does not appear to be a valid shell script"
+        rm -rf "$temp_dir"
+        return 1
+      fi
+    else
+      error "Failed to download mise installation script"
+      rm -rf "$temp_dir"
+      return 1
+    fi
+
+    # Cleanup temp directory
+    rm -rf "$temp_dir"
 
     # Get shell name from RC_FILE
     local shell_name=$(basename "${RC_FILE}" | sed 's/\.[^.]*$//')
@@ -158,7 +183,35 @@ install_nodejs() {
   read -p "Would you like to install Nodejs? (y/N) " response
   if [[ "$response" =~ ^[Yy]$ ]]; then
     log "Installing NVM..."
-    curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+
+    # Create temporary directory for secure installation
+    local temp_dir=$(mktemp -d)
+    cd "$temp_dir"
+
+    # Download NVM installation script for inspection
+    log "Downloading NVM installation script..."
+    local nvm_version="v0.40.3"
+    local nvm_url="https://raw.githubusercontent.com/nvm-sh/nvm/${nvm_version}/install.sh"
+
+    if curl -fsSL "$nvm_url" -o nvm-install.sh; then
+      # Basic security check - verify it's a shell script
+      if head -1 nvm-install.sh | grep -q "^#!/.*sh"; then
+        log "Installing NVM from downloaded script..."
+        chmod +x nvm-install.sh
+        ./nvm-install.sh
+      else
+        error "Downloaded NVM installer does not appear to be a valid shell script"
+        rm -rf "$temp_dir"
+        return 1
+      fi
+    else
+      error "Failed to download NVM installation script"
+      rm -rf "$temp_dir"
+      return 1
+    fi
+
+    # Cleanup temp directory
+    rm -rf "$temp_dir"
 
     # Load nvm to the current shell
     export NVM_DIR="$HOME/.nvm"
@@ -274,6 +327,29 @@ install_lazyvim() {
   fi
 }
 
+# Function to verify file checksum
+verify_checksum() {
+  local file="$1"
+  local expected_checksum="$2"
+  local algorithm="${3:-sha256}"
+
+  if ! command_exists "${algorithm}sum"; then
+    warn "Cannot verify checksum: ${algorithm}sum not available"
+    return 1
+  fi
+
+  local actual_checksum=$(${algorithm}sum "$file" | cut -d' ' -f1)
+  if [ "$actual_checksum" = "$expected_checksum" ]; then
+    log "Checksum verification passed for $file"
+    return 0
+  else
+    error "Checksum verification failed for $file"
+    error "Expected: $expected_checksum"
+    error "Actual: $actual_checksum"
+    return 1
+  fi
+}
+
 # Install lazygit (Ubuntu only - macOS uses brew)
 install_lazygit() {
   log "Checking lazygit installation..."
@@ -282,10 +358,42 @@ install_lazygit() {
     if [ "$os" = "ubuntu" ]; then
       log "Installing lazygit for Ubuntu..."
       LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | grep -Po '"tag_name": *"v\K[^"]*')
-      curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
-      tar xf lazygit.tar.gz lazygit
-      sudo install lazygit -D -t /usr/local/bin/
-      rm -f lazygit.tar.gz lazygit
+
+      # Download lazygit binary
+      local lazygit_url="https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
+      local checksum_url="https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/checksums.txt"
+
+      log "Downloading lazygit v${LAZYGIT_VERSION}..."
+      curl -Lo lazygit.tar.gz "$lazygit_url"
+
+      # Download and verify checksum
+      log "Downloading checksums for verification..."
+      if curl -sL "$checksum_url" -o checksums.txt; then
+        local expected_checksum=$(grep "lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz" checksums.txt | cut -d' ' -f1)
+        if [ -n "$expected_checksum" ]; then
+          if verify_checksum "lazygit.tar.gz" "$expected_checksum"; then
+            log "Checksum verified, proceeding with installation..."
+            tar xf lazygit.tar.gz lazygit
+            sudo install lazygit -D -t /usr/local/bin/
+            log "lazygit installed successfully"
+          else
+            error "Checksum verification failed, aborting installation"
+            rm -f lazygit.tar.gz checksums.txt
+            return 1
+          fi
+        else
+          warn "Could not find checksum for lazygit binary, proceeding without verification"
+          tar xf lazygit.tar.gz lazygit
+          sudo install lazygit -D -t /usr/local/bin/
+        fi
+      else
+        warn "Could not download checksums, proceeding without verification"
+        tar xf lazygit.tar.gz lazygit
+        sudo install lazygit -D -t /usr/local/bin/
+      fi
+
+      # Cleanup
+      rm -f lazygit.tar.gz lazygit checksums.txt
     else
       log "lazygit should be installed via package manager on macOS"
     fi
@@ -353,10 +461,10 @@ install_macos_packages() {
       continue
     fi
 
-    # Check if it's a custom command (starts with a command)
-    if [[ "$line" =~ ^(curl|wget|brew|sudo|/bin/bash).* ]]; then
-      log "Executing custom command: $line"
-      eval "$line" || warn "Failed to execute custom command: $line"
+    # Check if it's a warning message
+    if [[ "$line" =~ ^warn ]]; then
+      local warning_msg=$(echo "$line" | sed 's/^warn *//')
+      warn "$warning_msg"
     # Check if it's a cask package (GUI)
     elif [[ "$line" =~ ^cask: ]]; then
       package=$(echo "$line" | sed 's/^cask: *//')
@@ -390,10 +498,14 @@ install_ubuntu_packages() {
       continue
     fi
 
-    # Check if it's a custom command (starts with sudo, curl, wget, etc.)
-    if [[ "$line" =~ ^(sudo|curl|wget|apt|dpkg|/bin/bash).* ]]; then
-      log "Executing custom command: $line"
-      eval "$line" || warn "Failed to execute custom command: $line"
+    # Check if it's a warning message
+    if [[ "$line" =~ ^warn ]]; then
+      local warning_msg=$(echo "$line" | sed 's/^warn *//')
+      warn "$warning_msg"
+    # Check if it's a safe custom command (only allow specific package managers)
+    elif [[ "$line" =~ ^(sudo apt |snap install |apt install ).* ]]; then
+      log "Executing package command: $line"
+      eval "$line" || warn "Failed to execute package command: $line"
     # Check if it's a snap package
     elif [[ "$line" =~ ^snap: ]]; then
       package=$(echo "$line" | sed 's/^snap: *//')

@@ -40,10 +40,9 @@ cask: localsend
 cask: itsycal
 cask: scroll-reverser
 
-## Custom installation commands
-# Custom commands for packages not available in Homebrew
-# These will be executed as shell commands
-warn "duet-display and upwork need to be installed manually from their websites"
-warn "Visit https://www.duetdisplay.com/ to download Duet Display"
-warn "Visit https://www.upwork.com/ab/downloads/ to download Upwork"
+## Manual installation reminders
+# These packages need to be installed manually
+warn duet-display and upwork need to be installed manually from their websites
+warn Visit https://www.duetdisplay.com/ to download Duet Display
+warn Visit https://www.upwork.com/ab/downloads/ to download Upwork
 
