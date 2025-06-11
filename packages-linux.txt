@@ -1,0 +1,39 @@
+# Linux Package List
+# This file contains packages to install on Linux
+# Format:
+#   - apt packages: package-name
+#   - snap packages: snap: package-name
+#   - Comments start with #
+
+## CLI Packages (apt)
+git
+curl
+wget
+btop
+tree
+jq
+ripgrep
+fd-find
+bat
+gh
+build-essential
+software-properties-common
+apt-transport-https
+ca-certificates
+gnupg
+neofetch
+
+## GUI Applications (snap)
+snap: flameshot
+snap: code
+snap: slack
+snap: firefox
+snap: chromium
+snap: docker
+snap: spotify
+snap: obsidian --classic
+snap: pgadmin4
+
+## Custom installation commands
+# Custom commands for packages requiring special installation
+sudo add-apt-repository universe -y && sudo add-apt-repository ppa:agornostal/ulauncher -y && sudo apt update && sudo apt install ulauncher -y

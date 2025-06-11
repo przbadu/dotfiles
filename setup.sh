@@ -37,6 +37,21 @@ dir_exists() {
   [ -d "$1" ]
 }
 
+# Function to detect operating system
+detect_os() {
+  if [[ "$OSTYPE" == "darwin"* ]]; then
+    echo "macos"
+  elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    if command_exists apt; then
+      echo "ubuntu"
+    else
+      echo "linux"
+    fi
+  else
+    echo "unknown"
+  fi
+}
+
 # Function to backup a directory if it exists
 backup_dir() {
   local dir=$1
@@ -293,6 +308,118 @@ install_tmux() {
   sudo apt install tmux -y
 }
 
+# Install packages from OS-specific package files
+install_packages() {
+  local os=$(detect_os)
+  local packages_file=""
+
+  case $os in
+  "macos")
+    packages_file="packages-macos.txt"
+    ;;
+  "ubuntu")
+    packages_file="packages-linux.txt"
+    ;;
+  *)
+    warn "Unsupported OS: $os. Skipping package installation."
+    return
+    ;;
+  esac
+
+  if [ ! -f "$packages_file" ]; then
+    warn "$packages_file not found, skipping package installation"
+    return
+  fi
+
+  log "Installing packages from $packages_file for $os..."
+
+  case $os in
+  "macos")
+    install_macos_packages "$packages_file"
+    ;;
+  "ubuntu")
+    install_ubuntu_packages "$packages_file"
+    ;;
+  esac
+}
+
+# Install packages on macOS using Homebrew
+install_macos_packages() {
+  local packages_file="$1"
+
+  # Install Homebrew if not present
+  if ! command_exists brew; then
+    log "Installing Homebrew..."
+    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+    # Add Homebrew to PATH for current session
+    if [[ -f "/opt/homebrew/bin/brew" ]]; then
+      eval "$(/opt/homebrew/bin/brew shellenv)"
+    elif [[ -f "/usr/local/bin/brew" ]]; then
+      eval "$(/usr/local/bin/brew shellenv)"
+    fi
+  fi
+
+  # Read packages from file and install
+  while IFS= read -r line; do
+    # Skip comments and empty lines
+    if [[ "$line" =~ ^#.*$ ]] || [[ -z "$line" ]]; then
+      continue
+    fi
+
+    # Check if it's a custom command (starts with a command)
+    if [[ "$line" =~ ^(curl|wget|brew|sudo|/bin/bash).* ]]; then
+      log "Executing custom command: $line"
+      eval "$line" || warn "Failed to execute custom command: $line"
+    # Check if it's a cask package (GUI)
+    elif [[ "$line" =~ ^cask: ]]; then
+      package=$(echo "$line" | sed 's/^cask: *//')
+      log "Installing cask: $package"
+      brew install --cask "$package" || warn "Failed to install cask: $package"
+    else
+      log "Installing package: $line"
+      brew install "$line" || warn "Failed to install package: $line"
+    fi
+  done <"$packages_file"
+}
+
+# Install packages on Ubuntu using apt and snap
+install_ubuntu_packages() {
+  local packages_file="$1"
+
+  # Update package list
+  log "Updating package list..."
+  sudo apt update
+
+  # Install snapd if not present
+  if ! command_exists snap; then
+    log "Installing snapd..."
+    sudo apt install -y snapd
+  fi
+
+  # Read packages from file and install
+  while IFS= read -r line; do
+    # Skip comments and empty lines
+    if [[ "$line" =~ ^#.*$ ]] || [[ -z "$line" ]]; then
+      continue
+    fi
+
+    # Check if it's a custom command (starts with sudo, curl, wget, etc.)
+    if [[ "$line" =~ ^(sudo|curl|wget|apt|dpkg|/bin/bash).* ]]; then
+      log "Executing custom command: $line"
+      eval "$line" || warn "Failed to execute custom command: $line"
+    # Check if it's a snap package
+    elif [[ "$line" =~ ^snap: ]]; then
+      package=$(echo "$line" | sed 's/^snap: *//')
+      log "Installing snap package: $package"
+      sudo snap install $package || warn "Failed to install snap package: $package"
+    else
+      log "Installing apt package: $line"
+      sudo apt install -y "$line" || warn "Failed to install apt package: $line"
+    fi
+  done <"$packages_file"
+}
+
 # Copy dotfiles
 copy_dotfiles() {
   if [ -f "$HOME/.zshrc" ]; then
@@ -320,6 +447,9 @@ copy_dotfiles() {
 # Main installation process
 main() {
   log "Starting installation process..."
+
+  # Install packages from packages.txt first
+  install_packages
 
   # only install debian dependencies if on a Debian-based system
   if command_exists apt; then
