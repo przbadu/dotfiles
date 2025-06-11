@@ -298,7 +298,8 @@ install_zsh() {
     fi
 
     # Prompt user if they want to change shell now
-    read -p "Would you like to change your default shell to zsh now? (y/N) " response
+    echo -n "Would you like to change your default shell to zsh now? (y/N) "
+    read response
     if [[ "$response" =~ ^[Yy]$ ]]; then
       log "Changing default shell to zsh..."
       run_with_sudo chsh -s "$(which zsh)" "$USER"
