@@ -734,6 +734,20 @@ install_ubuntu_packages() {
   done <"$packages_file"
 }
 
+# setup database
+setup_database() {
+  if ! command_exists psql; then
+    error "PostgreSQL is not installed. Please install it first."
+    error "On Ubuntu/Debian: sudo apt install postgresql libpq-dev"
+    error "On macOS: brew install postgresql"
+    return 1
+  fi
+
+  log "Setting up postgresql root user"
+  run_with_sudo -u postgres createuser $USER -s
+  run_with_sudo -u postgres psql
+}
+
 # Copy dotfiles
 copy_dotfiles() {
   # Check if stow is installed first
@@ -834,6 +848,7 @@ main() {
   install_neovim
   install_lazyvim
   copy_dotfiles
+  setup_database
 
   log "Installation completed successfully!"
 

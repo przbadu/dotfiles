@@ -21,6 +21,7 @@ neovim
 fzf
 lazygit
 tmux
+postgresql
 
 ## GUI Applications (Casks)
 cask: google-chrome
