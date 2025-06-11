@@ -18,6 +18,7 @@ bat
 gh
 zsh
 neovim
+fzf
 
 ## GUI Applications (Casks)
 cask: visual-studio-code

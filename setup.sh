@@ -242,13 +242,10 @@ setup_custom_neovim_config() {
   log "Custom Neovim configuration setup completed."
 }
 
-# Modify install_lazyvim function to include custom config setup
+# Install LazyVim configuration
 install_lazyvim() {
   log "Checking LazyVim installation..."
   if ! dir_exists "${HOME}/.config/nvim"; then
-    log "Installing LazyVim dependencies..."
-    sudo apt install -y git fzf curl ripgrep
-
     log "Backing up existing Neovim configurations..."
     backup_dir "${HOME}/.config/nvim"
     backup_dir "${HOME}/.local/share/nvim"
