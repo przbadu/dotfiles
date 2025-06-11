@@ -33,6 +33,7 @@ ca-certificates
 gnupg
 neofetch
 stow
+timeshift
 
 ## GUI Applications (snap)
 snap: flameshot
