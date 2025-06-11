@@ -38,6 +38,54 @@ command_exists() {
   command -v "$1" >/dev/null 2>&1
 }
 
+# Function to check network connectivity
+check_network() {
+  local test_urls=("github.com" "raw.githubusercontent.com" "api.github.com")
+  local timeout=5
+
+  log "Checking network connectivity..."
+
+  for url in "${test_urls[@]}"; do
+    if curl -s --connect-timeout "$timeout" --max-time "$timeout" "https://$url" >/dev/null 2>&1; then
+      log "Network connectivity verified (reached $url)"
+      return 0
+    fi
+  done
+
+  error "Network connectivity check failed"
+  error "Unable to reach GitHub servers. Please check your internet connection."
+  error "Required domains: ${test_urls[*]}"
+  return 1
+}
+
+# Function to safely download a file with retries
+safe_download() {
+  local url="$1"
+  local output="$2"
+  local max_retries="${3:-3}"
+  local timeout="${4:-30}"
+
+  local retry=0
+  while [ $retry -lt $max_retries ]; do
+    log "Downloading $url (attempt $((retry + 1))/$max_retries)..."
+
+    if curl -fsSL --connect-timeout 10 --max-time "$timeout" "$url" -o "$output"; then
+      log "Successfully downloaded: $output"
+      return 0
+    else
+      warn "Download failed (attempt $((retry + 1))/$max_retries)"
+      retry=$((retry + 1))
+      if [ $retry -lt $max_retries ]; then
+        log "Retrying in 3 seconds..."
+        sleep 3
+      fi
+    fi
+  done
+
+  error "Failed to download $url after $max_retries attempts"
+  return 1
+}
+
 # Function to check if a directory exists
 dir_exists() {
   [ -d "$1" ]
@@ -117,7 +165,7 @@ cleanup_temp_dirs() {
 # Function to rollback installations on failure
 rollback_installation() {
   error "Installation failed, attempting rollback..."
-  
+
   # Remove installed binaries
   for binary in "${INSTALLED_BINARIES[@]}"; do
     if [ -f "$binary" ]; then
@@ -125,7 +173,7 @@ rollback_installation() {
       sudo rm -f "$binary" 2>/dev/null || warn "Could not remove $binary"
     fi
   done
-  
+
   # Restore backups
   for backup_dir in "${CREATED_BACKUPS[@]}"; do
     if dir_exists "${backup_dir}.bak" && ! dir_exists "$backup_dir"; then
@@ -133,10 +181,10 @@ rollback_installation() {
       mv "${backup_dir}.bak" "$backup_dir"
     fi
   done
-  
+
   # Cleanup temp directories
   cleanup_temp_dirs
-  
+
   log "Rollback completed"
 }
 
@@ -199,9 +247,14 @@ setup_mise() {
     track_temp_dir "$temp_dir"
     cd "$temp_dir"
 
+    # Check network connectivity before downloading
+    if ! check_network; then
+      return 1
+    fi
+
     # Download mise installation script for inspection
     log "Downloading mise installation script..."
-    if curl -fsSL https://mise.run -o mise-install.sh; then
+    if safe_download "https://mise.run" "mise-install.sh"; then
       # Basic security check - verify it's a shell script
       if head -1 mise-install.sh | grep -q "^#!/.*sh"; then
         log "Installing mise from downloaded script..."
@@ -272,14 +325,20 @@ install_nodejs() {
 
     # Create temporary directory for secure installation
     local temp_dir=$(mktemp -d)
+    track_temp_dir "$temp_dir"
     cd "$temp_dir"
+
+    # Check network connectivity before downloading
+    if ! check_network; then
+      return 1
+    fi
 
     # Download NVM installation script for inspection
     log "Downloading NVM installation script..."
     local nvm_version="v0.40.3"
     local nvm_url="https://raw.githubusercontent.com/nvm-sh/nvm/${nvm_version}/install.sh"
 
-    if curl -fsSL "$nvm_url" -o nvm-install.sh; then
+    if safe_download "$nvm_url" "nvm-install.sh"; then
       # Basic security check - verify it's a shell script
       if head -1 nvm-install.sh | grep -q "^#!/.*sh"; then
         log "Installing NVM from downloaded script..."
@@ -367,6 +426,11 @@ setup_custom_neovim_config() {
   local temp_dir=$(mktemp -d)
   track_temp_dir "$temp_dir"
   cd "$temp_dir"
+
+  # Check network connectivity before downloading
+  if ! check_network; then
+    return 1
+  fi
 
   # Download and extract templates
   log "Downloading Neovim templates..."
@@ -459,6 +523,11 @@ install_lazygit() {
         ;;
       esac
 
+      # Check network connectivity before downloading
+      if ! check_network; then
+        return 1
+      fi
+
       LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | grep -Po '"tag_name": *"v\K[^"]*')
 
       # Download lazygit binary
@@ -466,11 +535,13 @@ install_lazygit() {
       local checksum_url="https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/checksums.txt"
 
       log "Downloading lazygit v${LAZYGIT_VERSION} for ${lazygit_arch}..."
-      curl -Lo lazygit.tar.gz "$lazygit_url"
+      if ! safe_download "$lazygit_url" "lazygit.tar.gz"; then
+        return 1
+      fi
 
       # Download and verify checksum
       log "Downloading checksums for verification..."
-      if curl -sL "$checksum_url" -o checksums.txt; then
+      if safe_download "$checksum_url" "checksums.txt"; then
         local expected_checksum=$(grep "lazygit_${LAZYGIT_VERSION}_${lazygit_arch}.tar.gz" checksums.txt | cut -d' ' -f1)
         if [ -n "$expected_checksum" ]; then
           if verify_checksum "lazygit.tar.gz" "$expected_checksum"; then
@@ -644,6 +715,11 @@ copy_dotfiles() {
     if [ -f "$HOME/.zshrc" ]; then
       warn "Your $HOME/.zshrc is copied to $HOME/.zshrc.bak"
       mv "$HOME/.zshrc" "$HOME/.zshrc.bak"
+    fi
+
+    # Check network connectivity before cloning
+    if ! check_network; then
+      return 1
     fi
 
     log "Cloning dotfiles to ~/dotfiles"
