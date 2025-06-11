@@ -28,6 +28,10 @@ This repository contains dotfiles and setup scripts for automated development en
 ### Option 1: Direct Installation (Recommended)
 
 ```bash
+#### Only for linux user, make sure to install zsh and use zsh before running script
+sudo apt install zsh # only for linux user
+zsh # only for linux user
+
 # Clone the repository
 git clone https://github.com/przbadu/dotfiles.git ~/.dotfiles
 cd ~/.dotfiles
