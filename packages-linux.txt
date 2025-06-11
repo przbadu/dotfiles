@@ -18,6 +18,7 @@ bat
 gh
 zsh
 neovim
+fzf
 build-essential
 rustc
 libssl-dev
