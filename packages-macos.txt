@@ -23,6 +23,7 @@ lazygit
 tmux
 postgresql
 font-jetbrains-mono-nerd-font
+zoxide
 
 ## GUI Applications (Casks)
 cask: google-chrome

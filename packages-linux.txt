@@ -37,6 +37,7 @@ sqlite3
 libpq-dev
 postgresql
 fonts-jetbrains-mono
+zoxide
 
 ## GUI Applications (snap)
 snap: flameshot
