@@ -175,6 +175,66 @@ stow git     # Links git config to ~/.gitconfig
 stow zsh     # Links zsh config to ~/.zshrc
 ```
 
+## Testing
+
+Before running the full installation, especially after making changes to the script, it's recommended to test it thoroughly:
+
+### Quick Testing Strategy
+
+**1. Syntax Check First:**
+```bash
+bash -n setup.sh
+```
+
+**2. Test Individual Functions:**
+```bash
+# Test network connectivity
+bash -c 'source setup.sh; check_network'
+
+# Test OS and architecture detection
+bash -c 'source setup.sh; echo "OS: $(detect_os)"; echo "Arch: $(detect_arch)"'
+
+# Test sudo handling
+bash -c 'source setup.sh; need_sudo && echo "Needs sudo" || echo "No sudo needed"'
+
+# Test system requirements check
+bash -c 'source setup.sh; check_system_requirements'
+```
+
+**3. Safe Testing Environments:**
+
+**Option A: Disposable Environment (Recommended)**
+- Docker container
+- Virtual machine  
+- Fresh Ubuntu/macOS install
+
+**Option B: Limited Testing**
+```bash
+# Test with package installation commented out
+# Edit setup.sh temporarily to comment out destructive operations
+```
+
+### What to Test Specifically
+
+1. **Privilege detection** - Run as different users (regular user, root)
+2. **Network checks** - Test with/without internet connection
+3. **Architecture detection** - Verify correct architecture detection on your system
+4. **Error handling** - Interrupt script (Ctrl+C) to test rollback mechanisms
+5. **Package file parsing** - Verify warning messages and package commands work correctly
+6. **Cross-platform compatibility** - Test on both macOS and Linux if possible
+
+### Testing Checklist
+
+- [ ] Syntax validation passes
+- [ ] Functions work individually
+- [ ] Network connectivity check works
+- [ ] OS/architecture detection correct
+- [ ] Sudo handling works for your user level
+- [ ] System requirements check passes
+- [ ] Rollback mechanism works (test by interrupting)
+- [ ] Package files parse correctly
+- [ ] Full installation in disposable environment
+
 ## Troubleshooting
 
 ### Common Issues
@@ -197,6 +257,11 @@ chmod +x setup.sh
 4. **Stow Conflicts**
     - Remove existing dotfiles or backup them before running stow
     - Use `stow -D <package>` to unlink before re-linking
+
+5. **Sudo Issues**
+    - Script automatically detects privilege level
+    - Run as regular user (recommended) or as root
+    - Ensure sudo is available if not running as root
 
 ## Contributing
 
