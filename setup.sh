@@ -263,16 +263,21 @@ install_lazyvim() {
   fi
 }
 
-# Install lazygit
+# Install lazygit (Ubuntu only - macOS uses brew)
 install_lazygit() {
   log "Checking lazygit installation..."
   if ! command_exists lazygit; then
-    log "Installing lazygit..."
-    LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | grep -Po '"tag_name": *"v\K[^"]*')
-    curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
-    tar xf lazygit.tar.gz lazygit
-    sudo install lazygit -D -t /usr/local/bin/
-    rm -f lazygit.tar.gz lazygit
+    local os=$(detect_os)
+    if [ "$os" = "ubuntu" ]; then
+      log "Installing lazygit for Ubuntu..."
+      LAZYGIT_VERSION=$(curl -s "https://api.github.com/repos/jesseduffield/lazygit/releases/latest" | grep -Po '"tag_name": *"v\K[^"]*')
+      curl -Lo lazygit.tar.gz "https://github.com/jesseduffield/lazygit/releases/download/v${LAZYGIT_VERSION}/lazygit_${LAZYGIT_VERSION}_Linux_x86_64.tar.gz"
+      tar xf lazygit.tar.gz lazygit
+      sudo install lazygit -D -t /usr/local/bin/
+      rm -f lazygit.tar.gz lazygit
+    else
+      log "lazygit should be installed via package manager on macOS"
+    fi
   else
     warn "lazygit already installed, skipping..."
   fi
@@ -444,12 +449,14 @@ main() {
   # Configure zsh as default shell (zsh installed via package manager)
   install_and_select_zsh
 
+  # Install OS-specific packages
+  install_lazygit
+
   # only install debian-specific packages if on a Debian-based system
   if command_exists apt; then
-    install_lazygit
     install_tmux
   else
-    warn "Lazygit and tmux are only installed on Debian-based systems. You need to install them manually."
+    warn "tmux is only installed on Debian-based systems. You need to install it manually."
   fi
 
   setup_mise
