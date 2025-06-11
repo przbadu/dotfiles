@@ -370,9 +370,11 @@ setup_mise() {
 }
 
 install_ruby() {
-  read -p "Would you like to install ruby? (y/N) " response
+  echo -n "Would you like to install ruby? (y/N) "
+  read response
   if [[ "$response" =~ ^[Yy]$ ]]; then
-    read -p "Enter Ruby version (default: 3): " RUBY_VERSION
+    echo -n "Enter Ruby version (default: 3): "
+    read RUBY_VERSION
     RUBY_VERSION=${RUBY_VERSION:-3}
     log "Installing Ruby ${RUBY_VERSION}..."
     mise use --global "ruby@${RUBY_VERSION}"
@@ -391,7 +393,8 @@ install_ruby() {
 
 # Install node with nvm (mise install node causes trouble with MCP servers)
 install_nodejs() {
-  read -p "Would you like to install Nodejs? (y/N) " response
+  echo -n "Would you like to install Nodejs? (y/N) "
+  read response
   if [[ "$response" =~ ^[Yy]$ ]]; then
     log "Installing NVM..."
 
@@ -430,7 +433,8 @@ install_nodejs() {
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"                   # This loads nvm
     [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" # This loads nvm bash_completion
 
-    read -p "Enter Node.js version (default: node): " NODE_VERSION
+    echo -n "Enter Node.js version (default: node): "
+    read NODE_VERSION
     NODE_VERSION=${NODE_VERSION:-node}
     log "Installing Node.js ${NODE_VERSION} via NVM..."
     nvm install "$NODE_VERSION"
@@ -464,8 +468,10 @@ install_languages() {
 configure_git() {
   log "Checking git configuration..."
   if [ -z "$(git config --global user.name)" ] || [ -z "$(git config --global user.email)" ]; then
-    read -p "Enter your git username: " GIT_USERNAME
-    read -p "Enter your git email: " GIT_EMAIL
+    echo -n "Enter your git username: "
+    read GIT_USERNAME
+    echo -n "Enter your git email: "
+    read GIT_EMAIL
     git config --global color.ui true
     git config --global user.name "${GIT_USERNAME}"
     git config --global user.email "${GIT_EMAIL}"
