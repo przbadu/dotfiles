@@ -8,6 +8,7 @@
 ## CLI Packages
 git
 curl
+stow
 btop
 tree
 jq
