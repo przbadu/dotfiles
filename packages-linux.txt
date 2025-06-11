@@ -17,6 +17,7 @@ fd-find
 bat
 gh
 zsh
+neovim
 build-essential
 rustc
 libssl-dev

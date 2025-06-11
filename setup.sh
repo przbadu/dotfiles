@@ -205,25 +205,15 @@ configure_git() {
   fi
 }
 
-# Install neovim
+# Check neovim installation
 install_neovim() {
   log "Checking Neovim installation..."
   if ! command_exists nvim; then
-    log "Installing Neovim..."
-    curl -LO https://github.com/neovim/neovim/releases/latest/download/nvim-linux-x86_64.tar.gz
-    sudo rm -rf /opt/nvim-linux-x86_64
-    sudo tar -C /opt -xzf nvim-linux-x86_64.tar.gz
-    rm -f nvim-linux-x86_64.tar.gz
-
-    # Add to PATH in RC_FILE if not already there
-    if ! grep -q "/opt/nvim-linux-x86_64/bin" "${RC_FILE}"; then
-      echo 'export PATH="/opt/nvim-linux-x86_64/bin:$PATH"' >>"${RC_FILE}"
-    fi
-
-    # Export PATH for current session
-    export PATH="/opt/nvim-linux-x86_64/bin:$PATH"
+    warn "Neovim not found! It should be installed via package manager."
+    warn "Please ensure neovim is in your packages file and re-run the script."
+    return 1
   else
-    warn "Neovim already installed, skipping..."
+    log "Neovim already installed, Great!"
   fi
 }
 

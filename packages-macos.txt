@@ -17,6 +17,7 @@ fd
 bat
 gh
 zsh
+neovim
 
 ## GUI Applications (Casks)
 cask: visual-studio-code
