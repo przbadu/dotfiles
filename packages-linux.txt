@@ -16,6 +16,7 @@ ripgrep
 fd-find
 bat
 gh
+zsh
 build-essential
 rustc
 libssl-dev
