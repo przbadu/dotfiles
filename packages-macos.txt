@@ -19,6 +19,8 @@ gh
 zsh
 neovim
 fzf
+lazygit
+tmux
 
 ## GUI Applications (Casks)
 cask: visual-studio-code
