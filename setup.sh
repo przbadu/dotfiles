@@ -422,13 +422,32 @@ install_ubuntu_packages() {
 
 # Copy dotfiles
 copy_dotfiles() {
-  if [ -f "$HOME/.zshrc" ]; then
-    warn "Your $HOME/.zshrc is copied to $HOME/.zshrc.bak"
-    mv $HOME/.zshrc $HOME/.zshrc.bak
+  # Check if stow is installed first
+  if ! command_exists stow; then
+    error "GNU Stow is not installed. Please install stow first."
+    error "On Ubuntu/Debian: sudo apt install stow"
+    error "On macOS: brew install stow"
+    return 1
   fi
 
-  log "Installing stow to symlink dotfiles"
-  sudo apt install -y stow
+  # Handle existing dotfiles directory
+  if [ -d "$HOME/dotfiles" ]; then
+    warn "Existing dotfiles directory found at $HOME/dotfiles"
+    if [ ! -d "$HOME/dotfiles-bak" ]; then
+      log "Moving existing dotfiles to $HOME/dotfiles-bak"
+      mv "$HOME/dotfiles" "$HOME/dotfiles-bak"
+    else
+      warn "Backup directory $HOME/dotfiles-bak already exists"
+      log "Removing existing dotfiles directory to proceed with fresh clone"
+      rm -rf "$HOME/dotfiles"
+    fi
+  fi
+
+  # Backup existing .zshrc if it exists
+  if [ -f "$HOME/.zshrc" ]; then
+    warn "Your $HOME/.zshrc is copied to $HOME/.zshrc.bak"
+    mv "$HOME/.zshrc" "$HOME/.zshrc.bak"
+  fi
 
   log "Cloning dotfiles to ~/dotfiles"
   git clone git@github.com:przbadu/dotfiles.git ~/dotfiles

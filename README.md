@@ -1,40 +1,51 @@
-# LXC Container Development Environment Setup
+# Dotfiles Repository
 
-This script automates the setup of a development environment in an LXC container, installing and configuring essential development tools and utilities.
+This repository contains dotfiles and setup scripts for automated development environment configuration. It includes system packages, development tools setup, and symlink management using GNU Stow.
 
 ## Features
 
-- System dependencies installation
-- Development tools setup:
+- Automated setup script for development environment
+- Package lists for Linux (Ubuntu/Debian) and macOS
+- GNU Stow-based dotfiles management
+- Development tools installation:
   - mise (version manager)
-  - Ruby
-  - Node.js
-  - Git
-  - Neovim
-  - LazyVim
+  - Ruby, Node.js
+  - Git configuration
+  - Neovim with LazyVim
   - Lazygit
 - Idempotent installation (safe to run multiple times)
 - Automatic backup of existing configurations
-- Detailed logging and error handling
 
 ## Prerequisites
 
-- Ubuntu/Debian-based LXC container
+- Linux (Ubuntu/Debian) or macOS
 - Internet connection
-- Sudo privileges
+- Sudo privileges for package installation
 
 
 ## Installation
 
-### IMPORTANT: Security Note
+### Option 1: Direct Installation (Recommended)
 
-We encourage users to inspect the script before running it:
+```bash
+# Clone the repository
+git clone https://github.com/przbadu/dotfiles.git ~/.dotfiles
+cd ~/.dotfiles
 
-> NOTE: because this script contains step to install zsh and change your default shell, running script
-> Directly from curl command e.g: `curl -sSL <path> | bash` will throw error.
-> if you already have zsh installed, you can run it like that, otherwise follow:
+# Run the setup script
+./setup.sh
+```
 
-**If you want to use zsh shell**
+### Option 2: Remote Installation
+
+**IMPORTANT: Security Note**
+We encourage users to inspect the script before running it.
+
+> NOTE: Because this script installs zsh and changes your default shell, running the script
+> directly from curl (e.g: `curl -sSL <path> | bash`) may cause errors.
+> If you already have zsh installed, you can run it directly, otherwise follow the manual approach:
+
+**Manual approach (if you want to use zsh shell):**
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/przbadu/dotfiles/main/setup.sh > setup.sh
@@ -42,14 +53,26 @@ curl -sSL https://raw.githubusercontent.com/przbadu/dotfiles/main/setup.sh > set
 chmod +x setup.sh
 ./setup.sh
 
-# after succesfully completed
+# Clean up after successful completion
 rm setup.sh
 ```
 
-**If you want to use bash shell or if you already have zsh activated**
+**Direct approach (if you already have zsh or want to use bash):**
 
-```sh
+```bash
 curl -sSL https://raw.githubusercontent.com/przbadu/dotfiles/main/setup.sh | bash
+```
+
+### Option 3: Manual Package Installation
+
+You can also install packages manually using the provided package lists:
+
+```bash
+# For Linux (Ubuntu/Debian)
+sudo apt update && sudo apt install $(cat packages-linux.txt)
+
+# For macOS (using Homebrew)
+brew install $(cat packages-macos.txt)
 ```
 
 ### Configuration Options
@@ -62,45 +85,55 @@ During installation, you'll be prompted to configure:
 
 ## What Gets Installed
 
-### System Dependencies
+### System Packages
 
-- build-essential
-- rustc
-- libssl-dev
-- libyaml-dev
-- zlib1g-dev
-- libgmp-dev
+**Linux (packages-linux.txt):**
+- Essential build tools (build-essential, rustc)
+- Development libraries (libssl-dev, libyaml-dev, zlib1g-dev, libgmp-dev)
+- System utilities and tools
+
+**macOS (packages-macos.txt):**
+- Development tools and utilities via Homebrew
+- Compatible macOS equivalents of Linux packages
 
 ### Development Tools
 
-- mise (version manager)
-- Ruby (configurable version)
-- Node.js (configurable version)
-- Git (with user configuration)
-- Neovim (latest version)
-- LazyVim (with dependencies)
-    - git
-    - fzf
-    - curl
-    - ripgrep
-- Lazygit (latest version)
+- **mise** - Universal version manager for programming languages
+- **Ruby** (configurable version, default: 3)
+- **Node.js** (configurable version, default: 22.13.0)
+- **Git** with user configuration
+- **Neovim** (latest version) with LazyVim configuration
+- **LazyVim** dependencies:
+  - git, fzf, curl, ripgrep
+- **Lazygit** (latest version)
+- **GNU Stow** for dotfiles management
 
-## Directory Structure
+## Repository Structure
+
+```
+dotfiles/
+├── README.md              # This file
+├── setup.sh              # Main setup script
+├── packages-linux.txt    # Linux package list
+├── packages-macos.txt    # macOS package list
+└── [dotfiles]/           # Dotfiles managed by GNU Stow
+```
+
+## Directory Structure (After Installation)
 
 The script creates and modifies the following directories:
-
-Copy
 
 ```sh
 $HOME/
 ├── .local/
-│   ├── bin/
-│   ├── share/nvim/
-│   └── state/nvim/
+│   ├── bin/              # Local binaries
+│   ├── share/nvim/       # Neovim shared data
+│   └── state/nvim/       # Neovim state files
 ├── .config/
-│   └── nvim/
-└── .cache/
-    └── nvim/
+│   └── nvim/             # Neovim configuration
+├── .cache/
+│   └── nvim/             # Neovim cache
+└── .dotfiles/            # This repository (if cloned locally)
 ```
 
 ## Backup Behavior
@@ -112,24 +145,42 @@ The script automatically backs up existing configurations by appending `.bak` to
 - `~/.local/state/nvim` → `~/.local/state/nvim.bak`
 - `~/.cache/nvim` → `~/.cache/nvim.bak`
 
+## Dotfiles Management
+
+This repository uses GNU Stow for managing dotfiles. After installation, you can:
+
+```bash
+# Navigate to dotfiles directory
+cd ~/.dotfiles
+
+# Use stow to symlink dotfiles (example)
+stow nvim    # Links nvim config to ~/.config/nvim
+stow git     # Links git config to ~/.gitconfig
+stow zsh     # Links zsh config to ~/.zshrc
+```
+
 ## Troubleshooting
 
 ### Common Issues
 
 1. **Permission Denied**
     
-```sh
-sudo chmod +x setup-container.sh
+```bash
+chmod +x setup.sh
 ```
     
 2. **Network Issues**
-    - Ensure your container has internet access
+    - Ensure your system has internet access
     - Check if required URLs are accessible
 
 3. **Installation Failures**
     - Check the logs for specific error messages
     - Ensure you have sufficient disk space
     - Verify system requirements are met
+
+4. **Stow Conflicts**
+    - Remove existing dotfiles or backup them before running stow
+    - Use `stow -D <package>` to unlink before re-linking
 
 ## Contributing
 

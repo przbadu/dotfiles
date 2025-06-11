@@ -22,10 +22,10 @@ apt-transport-https
 ca-certificates
 gnupg
 neofetch
+stow
 
 ## GUI Applications (snap)
 snap: flameshot
-snap: code
 snap: slack
 snap: firefox
 snap: chromium
