@@ -23,7 +23,6 @@ lazygit
 tmux
 
 ## GUI Applications (Casks)
-cask: visual-studio-code
 cask: google-chrome
 cask: slack
 cask: ghostty

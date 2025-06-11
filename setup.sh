@@ -153,11 +153,11 @@ install_ruby() {
   fi
 }
 
-# Lets install node with nvm because (mise install node are causing trouble with MCP servers)
+# Install node with nvm (mise install node causes trouble with MCP servers)
 install_nodejs() {
   read -p "Would you like to install Nodejs? (y/N) " response
   if [[ "$response" =~ ^[Yy]$ ]]; then
-    log "Install NVM: curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash"
+    log "Installing NVM..."
     curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
 
     # Load nvm to the current shell
@@ -165,10 +165,14 @@ install_nodejs() {
     [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"                   # This loads nvm
     [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion" # This loads nvm bash_completion
 
-    read -p "Enter Node.js version (default): " NODE_VERSION
-    NODE_VERSION=${NODE_VERSION:node}
-    log "Installing Node.js ${NODE_VERSION}..."
-    mise use --global "node@${NODE_VERSION}"
+    read -p "Enter Node.js version (default: node): " NODE_VERSION
+    NODE_VERSION=${NODE_VERSION:-node}
+    log "Installing Node.js ${NODE_VERSION} via NVM..."
+    nvm install "$NODE_VERSION"
+    nvm use "$NODE_VERSION"
+    nvm alias default "$NODE_VERSION"
+
+    # Install yarn globally
     npm install --global yarn@latest
   fi
 }
@@ -225,21 +229,28 @@ setup_custom_neovim_config() {
   mkdir -p "${HOME}/.config/nvim/lua/config"
   mkdir -p "${HOME}/.config/nvim/lua/plugins"
 
+  # Create temporary directory for downloads
+  local temp_dir=$(mktemp -d)
+  cd "$temp_dir"
+
   # Download and extract templates
   log "Downloading Neovim templates..."
-  git clone https://github.com/przbadu/dotfiles.git
+  if git clone https://github.com/przbadu/dotfiles.git; then
+    # Copy config files
+    log "Copying config files..."
+    cp -r dotfiles/templates/nvim/lua/config/*.* "${HOME}/.config/nvim/lua/config/" 2>/dev/null || warn "No config files found to copy"
 
-  # Copy config files
-  log "Copying config files..."
-  cp -r dotfiles/templates/nvim/lua/config/*.* $HOME/.config/nvim/lua/config/
+    # Copy plugin files
+    log "Copying plugin files..."
+    cp -r dotfiles/templates/nvim/lua/plugins/*.* "${HOME}/.config/nvim/lua/plugins/" 2>/dev/null || warn "No plugin files found to copy"
 
-  # Copy plugin files
-  log "Copying plugin files..."
-  cp -r dotfiles/templates/nvim/lua/plugins/*.* $HOME/.config/nvim/lua/plugins/
+    log "Custom Neovim configuration setup completed."
+  else
+    error "Failed to download Neovim templates from GitHub"
+  fi
 
-  # Cleanup
-  rm -rf dotfiles
-  log "Custom Neovim configuration setup completed."
+  # Cleanup temp directory
+  rm -rf "$temp_dir"
 }
 
 # Install LazyVim configuration
@@ -419,7 +430,13 @@ copy_dotfiles() {
     fi
 
     log "Cloning dotfiles to ~/dotfiles"
-    git clone git@github.com:przbadu/dotfiles.git ~/dotfiles
+    if ! git clone git@github.com:przbadu/dotfiles.git ~/dotfiles; then
+      warn "SSH clone failed, trying HTTPS..."
+      if ! git clone https://github.com/przbadu/dotfiles.git ~/dotfiles; then
+        error "Failed to clone dotfiles repository. Please check your internet connection and try again."
+        return 1
+      fi
+    fi
     cd "$HOME/dotfiles"
   fi
 
