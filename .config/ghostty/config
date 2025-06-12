@@ -1,0 +1,18 @@
+# Ghostty Terminal Configuration
+# See: https://ghostty.org/docs/config
+
+# Font Configuration
+font-family = JetBrainsMono Nerd Font
+font-size = 14
+
+# Theme and Appearance
+theme = dark
+background-opacity = 0.95
+
+# Window Configuration
+window-width = 120
+window-height = 30
+
+# Misc Configuration
+shell-integration = zsh
+confirm-close-surface = false
