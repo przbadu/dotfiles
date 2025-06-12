@@ -15,23 +15,114 @@ RC_FILE=""
 # Global flag for CLI-only installation
 CLI_ONLY=false
 
+# Global flag for forcing reinstallation
+FORCE_REINSTALL=false
+
+# Global flag for skipping package installation
+SKIP_PACKAGES=false
+
 # Global arrays to track installations and backups for rollback
 INSTALLED_PACKAGES=()
 CREATED_BACKUPS=()
 TEMP_DIRECTORIES=()
 INSTALLED_BINARIES=()
 
+# State management file
+STATE_FILE="${HOME}/.dotfiles-setup-state"
+
+# State management functions
+load_state() {
+  if [ -f "$STATE_FILE" ]; then
+    source "$STATE_FILE" 2>/dev/null || true
+  fi
+}
+
+save_state() {
+  local component="$1"
+  local version="$2"
+  
+  # Create state file if it doesn't exist
+  touch "$STATE_FILE"
+  
+  # Remove any existing entry for this component
+  grep -v "^${component}_" "$STATE_FILE" > "${STATE_FILE}.tmp" 2>/dev/null || true
+  mv "${STATE_FILE}.tmp" "$STATE_FILE" 2>/dev/null || true
+  
+  # Add new state
+  echo "${component}_COMPLETED=true" >> "$STATE_FILE"
+  echo "${component}_VERSION=\"${version}\"" >> "$STATE_FILE"
+  echo "${component}_TIMESTAMP=$(date +%s)" >> "$STATE_FILE"
+}
+
+is_completed() {
+  local component="$1"
+  local var_name="${component}_COMPLETED"
+  
+  if [ "$FORCE_REINSTALL" = true ]; then
+    return 1
+  fi
+  
+  load_state
+  eval "local completed=\$$var_name"
+  [ "$completed" = "true" ]
+}
+
+get_state_version() {
+  local component="$1"
+  local var_name="${component}_VERSION"
+  
+  load_state
+  eval "echo \$$var_name"
+}
+
+clear_state() {
+  local component="$1"
+  if [ -f "$STATE_FILE" ]; then
+    grep -v "^${component}_" "$STATE_FILE" > "${STATE_FILE}.tmp" 2>/dev/null || true
+    mv "${STATE_FILE}.tmp" "$STATE_FILE" 2>/dev/null || true
+  fi
+}
+
+# Enhanced checking functions for better performance
+is_git_configured() {
+  [ -n "$(git config --global user.name 2>/dev/null)" ] && [ -n "$(git config --global user.email 2>/dev/null)" ]
+}
+
+is_shell_zsh() {
+  [ "$SHELL" = "$(which zsh 2>/dev/null)" ]
+}
+
+is_lazyvim_installed() {
+  [ -d "${HOME}/.config/nvim" ] && [ -f "${HOME}/.config/nvim/init.lua" ]
+}
+
+is_dotfiles_symlinked() {
+  [ -L "${HOME}/.zshrc" ] && [ -d "${HOME}/dotfiles" ]
+}
+
+is_postgres_user_created() {
+  if command_exists psql; then
+    run_with_sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='$USER'" 2>/dev/null | grep -q 1
+  else
+    return 1
+  fi
+}
+
 # Function to show help
 show_help() {
   echo "Usage: $0 [OPTIONS]"
   echo ""
   echo "Options:"
-  echo "  --cli-only    Skip GUI applications (useful for LXC containers)"
-  echo "  --help        Show this help message"
+  echo "  --cli-only        Skip GUI applications (useful for LXC containers)"
+  echo "  --force           Force reinstallation of all components"
+  echo "  --skip-packages   Skip package installation step"
+  echo "  --help            Show this help message"
   echo ""
   echo "Examples:"
-  echo "  $0                # Full installation with GUI apps"
-  echo "  $0 --cli-only     # CLI tools only (no GUI apps)"
+  echo "  $0                    # Full installation with GUI apps"
+  echo "  $0 --cli-only         # CLI tools only (no GUI apps)"
+  echo "  $0 --force            # Force reinstall everything"
+  echo "  $0 --skip-packages    # Skip package installation, run other setup steps"
 }
 
 # Function to parse command line arguments
@@ -40,6 +131,14 @@ parse_args() {
     case $1 in
       --cli-only)
         CLI_ONLY=true
+        shift
+        ;;
+      --force)
+        FORCE_REINSTALL=true
+        shift
+        ;;
+      --skip-packages)
+        SKIP_PACKAGES=true
         shift
         ;;
       --help|-h)
@@ -311,6 +410,11 @@ install_zsh() {
 
 # Setup mise
 setup_mise() {
+  if is_completed "MISE"; then
+    log "mise installation already completed, skipping..."
+    return 0
+  fi
+  
   if ! command_exists mise; then
     log "Installing mise..."
 
@@ -364,8 +468,12 @@ setup_mise() {
       error "mise binary not found after installation. Please check installation and try again."
       exit 1
     fi
+    
+    # Save state on successful installation
+    save_state "MISE" "$(mise --version 2>/dev/null || echo 'unknown')"
   else
     warn "mise already installed, skipping..."
+    save_state "MISE" "$(mise --version 2>/dev/null || echo 'unknown')"
   fi
 }
 
@@ -466,8 +574,13 @@ install_languages() {
 
 # Configure git
 configure_git() {
+  if is_completed "GIT_CONFIG"; then
+    log "Git configuration already completed, skipping..."
+    return 0
+  fi
+  
   log "Checking git configuration..."
-  if [ -z "$(git config --global user.name)" ] || [ -z "$(git config --global user.email)" ]; then
+  if ! is_git_configured; then
     echo -n "Enter your git username: "
     read GIT_USERNAME
     echo -n "Enter your git email: "
@@ -475,8 +588,10 @@ configure_git() {
     git config --global color.ui true
     git config --global user.name "${GIT_USERNAME}"
     git config --global user.email "${GIT_EMAIL}"
+    save_state "GIT_CONFIG" "${GIT_USERNAME}:${GIT_EMAIL}"
   else
     warn "Git already configured, skipping..."
+    save_state "GIT_CONFIG" "$(git config --global user.name):$(git config --global user.email)"
   fi
 }
 
@@ -576,6 +691,11 @@ verify_checksum() {
 
 # Install lazygit (Ubuntu only - macOS uses brew)
 install_lazygit() {
+  if is_completed "LAZYGIT"; then
+    log "lazygit installation already completed, skipping..."
+    return 0
+  fi
+  
   log "Checking lazygit installation..."
   if ! command_exists lazygit; then
     local os=$(detect_os)
@@ -651,13 +771,22 @@ install_lazygit() {
     else
       log "lazygit should be installed via package manager on macOS"
     fi
+    
+    # Save state on successful installation or if already present
+    save_state "LAZYGIT" "$(lazygit --version 2>/dev/null | head -1 || echo 'unknown')"
   else
     warn "lazygit already installed, skipping..."
+    save_state "LAZYGIT" "$(lazygit --version 2>/dev/null | head -1 || echo 'unknown')"
   fi
 }
 
 # Install JetBrains Mono Nerd Font
 install_nerd_fonts() {
+  if is_completed "NERD_FONTS"; then
+    log "JetBrains Mono Nerd Font installation already completed, skipping..."
+    return 0
+  fi
+  
   log "Checking JetBrains Mono Nerd Font installation..."
 
   local os=$(detect_os)
@@ -699,12 +828,14 @@ install_nerd_fonts() {
       run_with_sudo fc-cache -fv
 
       log "JetBrains Mono Nerd Font installed successfully"
+      save_state "NERD_FONTS" "latest"
     else
       error "Failed to download JetBrains Mono Nerd Font"
       return 1
     fi
   else
     log "JetBrains Mono Nerd Font should be installed via package manager on macOS"
+    save_state "NERD_FONTS" "system"
   fi
 }
 
@@ -845,6 +976,11 @@ install_ubuntu_packages() {
 
 # setup database
 setup_database() {
+  if is_completed "POSTGRES_SETUP"; then
+    log "PostgreSQL setup already completed, skipping..."
+    return 0
+  fi
+  
   if ! command_exists psql; then
     error "PostgreSQL is not installed. Please install it first."
     error "On Ubuntu/Debian: sudo apt install postgresql libpq-dev"
@@ -853,12 +989,14 @@ setup_database() {
   fi
 
   log "Setting up postgresql root user"
-  if run_with_sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='$USER'" | grep -q 1; then
+  if is_postgres_user_created; then
     log "PostgreSQL user '$USER' already exists, skipping user creation"
   else
     log "Creating PostgreSQL user '$USER'"
     run_with_sudo -u postgres createuser $USER -s
   fi
+  
+  save_state "POSTGRES_SETUP" "$USER"
 }
 
 # Copy dotfiles
@@ -955,7 +1093,11 @@ main() {
   fi
 
   # Install packages from packages.txt first
-  install_packages
+  if [ "$SKIP_PACKAGES" = true ]; then
+    log "Skipping package installation (--skip-packages flag)"
+  else
+    install_packages
+  fi
 
   # Install JetBrains Mono Nerd Font
   install_nerd_fonts
