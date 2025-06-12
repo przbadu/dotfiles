@@ -784,13 +784,12 @@ setup_custom_neovim_config() {
 install_lazyvim() {
   log "Checking LazyVim installation..."
   if ! dir_exists "${HOME}/.config/nvim"; then
-    log "Backing up existing Neovim configurations..."
-    backup_dir "${HOME}/.config/nvim"
-    backup_dir "${HOME}/.local/share/nvim"
-    backup_dir "${HOME}/.local/state/nvim"
-    backup_dir "${HOME}/.cache/nvim"
+    log "Fresh install LazyVim..."
+    rm -rf "${HOME}/.config/nvim"
+    rm -rf "${HOME}/.local/share/nvim"
+    rm -rf "${HOME}/.local/state/nvim"
+    rm -rf "${HOME}/.cache/nvim"
 
-    log "Installing LazyVim..."
     git clone https://github.com/LazyVim/starter "${HOME}/.config/nvim"
     rm -rf "${HOME}/.config/nvim/.git"
 
