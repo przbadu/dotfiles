@@ -142,6 +142,7 @@ show_help() {
   echo "  🛠️  Development Tools:"
   echo "    • mise (runtime version manager)"
   echo "    • lazygit (Git TUI)"
+  echo "    • uv (Python package manager)"
   echo "    • JetBrains Mono Nerd Font (with icon support)"
   echo "    • Ruby and Node.js with version selection"
   echo "    • Neovim with LazyVim configuration"
@@ -651,6 +652,62 @@ install_languages() {
     install_nodejs
   else
     warn "Node.js already installed, skipping..."
+  fi
+}
+
+# Install uv (Python package manager)
+install_uv() {
+  if is_completed "UV"; then
+    log "uv installation already completed, skipping..."
+    return 0
+  fi
+
+  if ! command_exists uv; then
+    log "Installing uv (Python package manager)..."
+
+    # Create temporary directory for secure installation
+    local temp_dir=$(mktemp -d)
+    track_temp_dir "$temp_dir"
+    cd "$temp_dir"
+
+    # Check network connectivity before downloading
+    if ! check_network; then
+      return 1
+    fi
+
+    # Download uv installation script for inspection
+    log "Downloading uv installation script..."
+    if safe_download "https://astral.sh/uv/install.sh" "uv-install.sh"; then
+      # Basic security check - verify it's a shell script
+      if head -1 uv-install.sh | grep -q "^#!/.*sh"; then
+        log "Installing uv from downloaded script..."
+        chmod +x uv-install.sh
+        ./uv-install.sh
+      else
+        error "Downloaded uv installer does not appear to be a valid shell script"
+        return 1
+      fi
+    else
+      error "Failed to download uv installation script"
+      return 1
+    fi
+
+    # Add uv to PATH for current session if installed to ~/.cargo/bin
+    if [ -f "${HOME}/.cargo/bin/uv" ]; then
+      export PATH="${HOME}/.cargo/bin:$PATH"
+    fi
+
+    # Verify uv is now available
+    if ! command_exists uv; then
+      error "uv installation failed or not in PATH. Please check installation and try again."
+      return 1
+    fi
+
+    # Save state on successful installation
+    save_state "UV" "$(uv --version 2>/dev/null || echo 'unknown')"
+  else
+    warn "uv already installed, skipping..."
+    save_state "UV" "$(uv --version 2>/dev/null || echo 'unknown')"
   fi
 }
 
@@ -1202,6 +1259,7 @@ main() {
   install_lazygit
   setup_mise
   install_languages
+  install_uv
   configure_git
   install_neovim
   install_lazyvim
