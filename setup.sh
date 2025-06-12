@@ -102,7 +102,14 @@ is_dotfiles_symlinked() {
 
 is_postgres_user_created() {
   if command_exists psql; then
-    run_with_sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='$USER'" 2>/dev/null | grep -q 1
+    local os=$(detect_os)
+    if [ "$os" = "macos" ]; then
+      # On macOS, connect directly without switching user
+      psql postgres -tAc "SELECT 1 FROM pg_roles WHERE rolname='$USER'" 2>/dev/null | grep -q 1
+    else
+      # On Linux, use postgres user
+      run_with_sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='$USER'" 2>/dev/null | grep -q 1
+    fi
   else
     return 1
   fi
@@ -1141,7 +1148,14 @@ setup_database() {
     log "PostgreSQL user '$USER' already exists, skipping user creation"
   else
     log "Creating PostgreSQL user '$USER'"
-    run_with_sudo -u postgres createuser $USER -s
+    local os=$(detect_os)
+    if [ "$os" = "macos" ]; then
+      # On macOS, create user directly
+      createuser $USER -s 2>/dev/null || psql postgres -c "CREATE USER $USER WITH SUPERUSER;" 2>/dev/null
+    else
+      # On Linux, use postgres user
+      run_with_sudo -u postgres createuser $USER -s
+    fi
   fi
 
   save_state "POSTGRES_SETUP" "$USER"

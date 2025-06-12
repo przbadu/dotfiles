@@ -39,8 +39,6 @@ zinit snippet OMZP::command-not-found
 # ctrl+p/n -> previous/next suggestions (cycle through)
 # ctrl+a/e -> jump to start/end of the line
 bindkey -e # emacs keybindings to use ctrl+n/p/a
-
-# Filter through line or search result from history
 bindkey '^p' up-line-or-search
 bindkey '^n' down-line-or-search
 bindkey '^[[A' up-line-or-search                                                
@@ -70,6 +68,7 @@ zstyle ':fzf-tab:complete:__zoxide_z:*' fzf-preview 'ls --color $realpath'
 # Macos
 if [[ $(uname) == "Darwin" ]]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
+  eval "$(~/.local/bin/mise activate)"
   export PGGSSENCMODE="disable"
 else
   # Shell integrations
@@ -77,12 +76,13 @@ else
   eval "$(zoxide init --cmd cd zsh)"
 fi
 
-# Activate mise
-eval "$(~/.local/bin/mise activate)"
-
 # Load completions
 autoload -U compinit && compinit
 zinit cdreplay -q
+
+### PATH configurations
+export EDITOR="nvim"
+export SUDO_EDITOR="nvim"
 
 ### Alias
 alias ls='ls --color'
@@ -100,21 +100,17 @@ alias dcdev="docker-compose -f docker-compose-dev.yml"
 alias web="dcdev run web"
 alias rtest="RAILS_ENV=test bundle exec rake test TESTOPTS=\"--seed=25773\" TESTOPTS=--profile"
 
-### PATH configurations
-export EDITOR="nvim"
-export SUDO_EDITOR="nvim"
-
 # nvm (node version manager)
 export NVM_DIR="$HOME/.nvm"
 [ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
 [ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
 
 # nvim path
-export PATH="/opt/nvim-linux-x86_64/bin:$PATH"
+# export PATH="$PATH:/opt/nvim/bin"
 # LMStudio
 export PATH="$PATH:/home/przbadu/.lmstudio/bin"
 # .local/bin - custom bin executable path
-export PATH="${HOME}/.local/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
 
 # To customize prompt, run `p10k configure` or edit ~/.p10k.zsh.
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
