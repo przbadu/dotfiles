@@ -177,18 +177,18 @@ detect_os() {
 detect_arch() {
   local arch=$(uname -m)
   case "$arch" in
-  x86_64 | amd64)
-    echo "x86_64"
-    ;;
-  aarch64 | arm64)
-    echo "arm64"
-    ;;
-  armv7l)
-    echo "armv7"
-    ;;
-  *)
-    echo "unknown"
-    ;;
+    x86_64 | amd64)
+      echo "x86_64"
+      ;;
+    aarch64 | arm64)
+      echo "arm64"
+      ;;
+    armv7l)
+      echo "armv7"
+      ;;
+    *)
+      echo "unknown"
+      ;;
   esac
 }
 
@@ -586,19 +586,19 @@ install_lazygit() {
       # Map architecture to lazygit naming convention
       local lazygit_arch
       case "$arch" in
-      x86_64)
-        lazygit_arch="Linux_x86_64"
-        ;;
-      arm64)
-        lazygit_arch="Linux_arm64"
-        ;;
-      armv7)
-        lazygit_arch="Linux_armv6"
-        ;;
-      *)
-        error "Unsupported architecture: $arch"
-        return 1
-        ;;
+        x86_64)
+          lazygit_arch="Linux_x86_64"
+          ;;
+        arm64)
+          lazygit_arch="Linux_arm64"
+          ;;
+        armv7)
+          lazygit_arch="Linux_armv6"
+          ;;
+        *)
+          error "Unsupported architecture: $arch"
+          return 1
+          ;;
       esac
 
       # Check network connectivity before downloading
@@ -656,22 +656,74 @@ install_lazygit() {
   fi
 }
 
+# Install JetBrains Mono Nerd Font
+install_nerd_fonts() {
+  log "Checking JetBrains Mono Nerd Font installation..."
+  
+  local os=$(detect_os)
+  if [ "$os" = "ubuntu" ]; then
+    log "Installing JetBrains Mono Nerd Font for Ubuntu..."
+
+    # Check if fonts directory exists, if not create it
+    local fonts_dir="/usr/local/share/fonts"
+    if [ ! -d "$fonts_dir" ]; then
+      log "Creating fonts directory: $fonts_dir"
+      run_with_sudo mkdir -p "$fonts_dir"
+    fi
+
+    # Check if JetBrains Mono Nerd Font is already installed
+    if fc-list | grep -qi "jetbrainsmono.*nerd"; then
+      warn "JetBrains Mono Nerd Font already installed, skipping..."
+      return 0
+    fi
+
+    # Create temporary directory for downloads
+    local temp_dir=$(mktemp -d)
+    track_temp_dir "$temp_dir"
+    cd "$temp_dir"
+
+    # Check network connectivity before downloading
+    if ! check_network; then
+      return 1
+    fi
+
+    # Download JetBrains Mono Nerd Font
+    local font_url="https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip"
+    log "Downloading JetBrains Mono Nerd Font..."
+    if safe_download "$font_url" "JetBrainsMono.zip"; then
+      log "Extracting fonts to $fonts_dir..."
+      run_with_sudo unzip -o "JetBrainsMono.zip" -d "$fonts_dir"
+
+      # Update font cache
+      log "Updating font cache..."
+      run_with_sudo fc-cache -fv
+
+      log "JetBrains Mono Nerd Font installed successfully"
+    else
+      error "Failed to download JetBrains Mono Nerd Font"
+      return 1
+    fi
+  else
+    log "JetBrains Mono Nerd Font should be installed via package manager on macOS"
+  fi
+}
+
 # Install packages from OS-specific package files
 install_packages() {
   local os=$(detect_os)
   local packages_file=""
 
   case $os in
-  "macos")
-    packages_file="packages-macos.txt"
-    ;;
-  "ubuntu")
-    packages_file="packages-linux.txt"
-    ;;
-  *)
-    warn "Unsupported OS: $os. Skipping package installation."
-    return
-    ;;
+    "macos")
+      packages_file="packages-macos.txt"
+      ;;
+    "ubuntu")
+      packages_file="packages-linux.txt"
+      ;;
+    *)
+      warn "Unsupported OS: $os. Skipping package installation."
+      return
+      ;;
   esac
 
   if [ ! -f "$packages_file" ]; then
@@ -682,12 +734,12 @@ install_packages() {
   log "Installing packages from $packages_file for $os..."
 
   case $os in
-  "macos")
-    install_macos_packages "$packages_file"
-    ;;
-  "ubuntu")
-    install_ubuntu_packages "$packages_file"
-    ;;
+    "macos")
+      install_macos_packages "$packages_file"
+      ;;
+    "ubuntu")
+      install_ubuntu_packages "$packages_file"
+      ;;
   esac
 }
 
@@ -719,7 +771,7 @@ install_macos_packages() {
     if [[ "$line" =~ ^warn ]]; then
       local warning_msg=$(echo "$line" | sed 's/^warn *//')
       warn "$warning_msg"
-    # Check if it's a cask package (GUI)
+      # Check if it's a cask package (GUI)
     elif [[ "$line" =~ ^cask: ]]; then
       if [ "$CLI_ONLY" = true ]; then
         log "Skipping GUI app (--cli-only): $line"
@@ -760,7 +812,7 @@ install_ubuntu_packages() {
     if [[ "$line" =~ ^warn ]]; then
       local warning_msg=$(echo "$line" | sed 's/^warn *//')
       warn "$warning_msg"
-    # Check if it's a safe custom command (only allow specific package managers)
+      # Check if it's a safe custom command (only allow specific package managers)
     elif [[ "$line" =~ ^(sudo apt |snap install |apt install ).* ]]; then
       # Skip snap commands in CLI-only mode
       if [[ "$line" =~ snap ]] && [ "$CLI_ONLY" = true ]; then
@@ -775,7 +827,7 @@ install_ubuntu_packages() {
       else
         eval "$line" || warn "Failed to execute package command: $line"
       fi
-    # Check if it's a snap package
+      # Check if it's a snap package
     elif [[ "$line" =~ ^snap: ]]; then
       if [ "$CLI_ONLY" = true ]; then
         log "Skipping GUI app (--cli-only): $line"
@@ -905,6 +957,9 @@ main() {
 
   # Install packages from packages.txt first
   install_packages
+
+  # Install JetBrains Mono Nerd Font
+  install_nerd_fonts
 
   # Configure zsh as default shell (zsh installed via package manager)
   install_and_select_zsh
