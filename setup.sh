@@ -659,7 +659,7 @@ install_lazygit() {
 # Install JetBrains Mono Nerd Font
 install_nerd_fonts() {
   log "Checking JetBrains Mono Nerd Font installation..."
-  
+
   local os=$(detect_os)
   if [ "$os" = "ubuntu" ]; then
     log "Installing JetBrains Mono Nerd Font for Ubuntu..."
@@ -859,7 +859,6 @@ setup_database() {
     log "Creating PostgreSQL user '$USER'"
     run_with_sudo -u postgres createuser $USER -s
   fi
-  run_with_sudo -u postgres psql
 }
 
 # Copy dotfiles
