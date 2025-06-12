@@ -1104,8 +1104,22 @@ install_ubuntu_packages() {
         continue
       fi
       package_line=$(echo "$line" | sed 's/^snap: *//')
-      log "Installing snap package: $package_line"
-      run_with_sudo snap install $package_line || warn "Failed to install snap package: $package_line"
+      # Parse package name and flags (e.g., "obsidian --classic" -> package="obsidian", flags="--classic")
+      package=$(echo "$package_line" | awk '{print $1}')
+      flags=$(echo "$package_line" | cut -d' ' -f2-)
+
+      # If package and flags are the same, there are no flags
+      if [ "$package" = "$flags" ]; then
+        flags=""
+      fi
+
+      if [ -n "$flags" ]; then
+        log "Installing snap package: $package with flags: $flags"
+        run_with_sudo snap install $package $flags || warn "Failed to install snap package: $package $flags"
+      else
+        log "Installing snap package: $package"
+        run_with_sudo snap install $package || warn "Failed to install snap package: $package"
+      fi
     else
       log "Installing apt package: $line"
       run_with_sudo apt install -y "$line" || warn "Failed to install apt package: $line"
