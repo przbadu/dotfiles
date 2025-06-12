@@ -1103,9 +1103,9 @@ install_ubuntu_packages() {
         log "Skipping GUI app (--cli-only): $line"
         continue
       fi
-      package=$(echo "$line" | sed 's/^snap: *//')
-      log "Installing snap package: $package"
-      run_with_sudo snap install $package || warn "Failed to install snap package: $package"
+      package_line=$(echo "$line" | sed 's/^snap: *//')
+      log "Installing snap package: $package_line"
+      run_with_sudo snap install $package_line || warn "Failed to install snap package: $package_line"
     else
       log "Installing apt package: $line"
       run_with_sudo apt install -y "$line" || warn "Failed to install apt package: $line"
