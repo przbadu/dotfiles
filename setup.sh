@@ -801,7 +801,12 @@ setup_database() {
   fi
 
   log "Setting up postgresql root user"
-  run_with_sudo -u postgres createuser $USER -s
+  if run_with_sudo -u postgres psql -tAc "SELECT 1 FROM pg_roles WHERE rolname='$USER'" | grep -q 1; then
+    log "PostgreSQL user '$USER' already exists, skipping user creation"
+  else
+    log "Creating PostgreSQL user '$USER'"
+    run_with_sudo -u postgres createuser $USER -s
+  fi
   run_with_sudo -u postgres psql
 }
 
