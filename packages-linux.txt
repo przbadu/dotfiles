@@ -43,12 +43,15 @@ zoxide
 snap: flameshot
 snap: slack
 snap: firefox
-snap: chromium
 snap: docker
 snap: spotify
 snap: obsidian --classic
 snap: pgadmin4
+snap: ghostty --classic
 
 ## Custom installation commands
 # Custom commands for packages requiring special installation
 sudo apt install software-properties-common -y && sudo add-apt-repository universe -y && sudo add-apt-repository ppa:agornostal/ulauncher -y && sudo apt update && sudo apt install ulauncher -y
+
+# Install JetBrains Mono Nerd Font (for better terminal icons/symbols)
+curl -L https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.zip -o /tmp/JetBrainsMono.zip && sudo unzip -o /tmp/JetBrainsMono.zip -d /usr/local/share/fonts/ && sudo fc-cache -fv
