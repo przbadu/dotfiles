@@ -38,9 +38,9 @@ libpq-dev
 postgresql
 fonts-jetbrains-mono
 zoxide
+flameshot
 
 ## GUI Applications (snap)
-snap: flameshot
 snap: slack
 snap: firefox
 snap: docker
