@@ -1203,8 +1203,8 @@ copy_dotfiles() {
       rm "$full_path"
     fi
   done
-  # Stow all dotfiles from the current directory
-  stow --ignore=setup.sh --ignore=packages-linux.txt --ignore=packages-macos.txt --ignore=todo.txt --ignore=README.md .
+  # Stow all dotfiles from the current directory (force restow)
+  stow --restow --ignore=setup.sh --ignore=packages-linux.txt --ignore=packages-macos.txt --ignore=todo.txt --ignore=README.md .
 
   if [ ! -d "${HOME}/.tmux/plugins/tpm" ]; then
     log "Install tmux package manager inside ~/.tmux/plugins/tpm"
