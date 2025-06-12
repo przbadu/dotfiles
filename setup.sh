@@ -378,13 +378,9 @@ detect_arch() {
 backup_dir() {
   local dir=$1
   if dir_exists "$dir"; then
-    if ! dir_exists "${dir}.bak"; then
-      log "Backing up ${dir} to ${dir}.bak"
-      mv "$dir" "${dir}.bak"
-      CREATED_BACKUPS+=("$dir")
-    else
-      warn "Backup ${dir}.bak already exists, skipping backup"
-    fi
+    log "Backing up ${dir} to ${dir}.bak"
+    mv "$dir" "${dir}.bak"
+    CREATED_BACKUPS+=("$dir")
   fi
 }
 
