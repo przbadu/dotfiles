@@ -1121,8 +1121,19 @@ copy_dotfiles() {
   fi
 
   log "Symlinking dotfiles"
-  # update existing files
-  stow --adopt --ignore=todo.txt --ignore=setup.sh --ignore=packages-linux.txt --ignore=packages-macos.txt .
+  # Backup existing dotfiles and remove symlinks to prevent stow conflicts
+  local dotfiles=(".zshrc" ".tmux.conf" ".config")
+  for dotfile in "${dotfiles[@]}"; do
+    local full_path="${HOME}/${dotfile}"
+    if [ -e "$full_path" ] && [ ! -L "$full_path" ]; then
+      backup_dir "$full_path"
+    elif [ -L "$full_path" ]; then
+      log "Removing existing symlink ${dotfile}"
+      rm "$full_path"
+    fi
+  done
+  # Stow only the specific dotfiles
+  stow .config .zshrc .tmux.conf
 
   if [ ! -d "${HOME}/.tmux/plugins/tpm" ]; then
     log "Install tmux package manager inside ~/.tmux/plugins/tpm"
