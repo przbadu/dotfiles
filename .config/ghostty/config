@@ -6,7 +6,7 @@ font-family = JetBrainsMono Nerd Font
 font-size = 14
 
 # Theme and Appearance
-theme = dark
+theme = light:catppuccin-frappe,dark:capttuccin-mocha
 background-opacity = 0.95
 
 # Window Configuration
