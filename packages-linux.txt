@@ -41,6 +41,8 @@ zoxide
 flameshot
 libxml2-dev
 libxslt1-dev
+gnome-shell-extensions
+gnome-tweaks
 
 ## GUI Applications (snap)
 snap: slack
