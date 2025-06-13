@@ -25,6 +25,8 @@ postgresql
 font-jetbrains-mono-nerd-font
 zoxide
 heroku/brew/heroku
+stripe/stripe-cli/stripe
+redis
 libxml2
 libxslt
 

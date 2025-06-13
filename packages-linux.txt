@@ -50,6 +50,8 @@ snap: spotify
 snap: obsidian --classic
 snap: pgadmin4
 snap: ghostty --classic
+snap: redis
+snap: nvim --classic
 
 ## Custom installation commands
 # Custom commands for packages requiring special installation
