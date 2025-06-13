@@ -1232,6 +1232,15 @@ check_system_requirements() {
   return 0
 }
 
+install_custom_packages() {
+  if [ "$os" = "ubuntu" ] && need_sudo; then
+    if ! command_exists heroku; then
+      log "Installing heroku cli"
+      curl https://cli-assets.heroku.com/install.sh | sh
+    fi
+  fi
+}
+
 # Main installation process
 main() {
   # Parse command line arguments
@@ -1272,6 +1281,7 @@ main() {
   install_lazyvim
   copy_dotfiles
   setup_database
+  install_custom_packages
 
   log "Installation completed successfully!"
 
