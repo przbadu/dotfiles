@@ -24,6 +24,9 @@ tmux
 postgresql
 font-jetbrains-mono-nerd-font
 zoxide
+heroku/brew/heroku
+libxml2
+libxslt
 
 ## GUI Applications (Casks)
 cask: google-chrome

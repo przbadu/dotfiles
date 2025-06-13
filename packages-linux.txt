@@ -39,6 +39,8 @@ postgresql
 fonts-jetbrains-mono
 zoxide
 flameshot
+libxml2-dev
+libxslt1-dev
 
 ## GUI Applications (snap)
 snap: slack
@@ -53,3 +55,4 @@ snap: ghostty --classic
 # Custom commands for packages requiring special installation
 sudo apt install software-properties-common -y && sudo add-apt-repository universe -y && sudo add-apt-repository ppa:agornostal/ulauncher -y && sudo apt update && sudo apt install ulauncher -y
 
+# heroku cli
