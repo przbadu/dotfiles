@@ -39,6 +39,7 @@ flameshot
 libxml2
 libxslt
 redis
+lazygit
 
 ## Development Libraries
 openssl-1.1
