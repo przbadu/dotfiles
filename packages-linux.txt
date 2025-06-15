@@ -54,6 +54,7 @@ snap: pgadmin4
 snap: ghostty --classic
 snap: redis
 snap: nvim --classic
+snap: localsend
 
 ## Custom installation commands
 # Custom commands for packages requiring special installation

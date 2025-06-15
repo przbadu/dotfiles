@@ -15,8 +15,6 @@ RC_FILE=""
 # Global flag for CLI-only installation
 CLI_ONLY=false
 
-# Global flag for forcing reinstallation
-FORCE_REINSTALL=false
 
 # Global flag for skipping package installation
 SKIP_PACKAGES=false
@@ -27,61 +25,6 @@ CREATED_BACKUPS=()
 TEMP_DIRECTORIES=()
 INSTALLED_BINARIES=()
 
-# State management file
-STATE_FILE="${HOME}/.dotfiles-setup-state"
-
-# State management functions
-load_state() {
-  if [ -f "$STATE_FILE" ]; then
-    source "$STATE_FILE" 2>/dev/null || true
-  fi
-}
-
-save_state() {
-  local component="$1"
-  local version="$2"
-
-  # Create state file if it doesn't exist
-  touch "$STATE_FILE"
-
-  # Remove any existing entry for this component
-  grep -v "^${component}_" "$STATE_FILE" > "${STATE_FILE}.tmp" 2>/dev/null || true
-  mv "${STATE_FILE}.tmp" "$STATE_FILE" 2>/dev/null || true
-
-  # Add new state
-  echo "${component}_COMPLETED=true" >> "$STATE_FILE"
-  echo "${component}_VERSION=\"${version}\"" >> "$STATE_FILE"
-  echo "${component}_TIMESTAMP=$(date +%s)" >> "$STATE_FILE"
-}
-
-is_completed() {
-  local component="$1"
-  local var_name="${component}_COMPLETED"
-
-  if [ "$FORCE_REINSTALL" = true ]; then
-    return 1
-  fi
-
-  load_state
-  eval "local completed=\$$var_name"
-  [ "$completed" = "true" ]
-}
-
-get_state_version() {
-  local component="$1"
-  local var_name="${component}_VERSION"
-
-  load_state
-  eval "echo \$$var_name"
-}
-
-clear_state() {
-  local component="$1"
-  if [ -f "$STATE_FILE" ]; then
-    grep -v "^${component}_" "$STATE_FILE" > "${STATE_FILE}.tmp" 2>/dev/null || true
-    mv "${STATE_FILE}.tmp" "$STATE_FILE" 2>/dev/null || true
-  fi
-}
 
 # Enhanced checking functions for better performance
 is_git_configured() {
@@ -117,28 +60,21 @@ is_postgres_user_created() {
 
 # Function to show help
 show_help() {
-  echo "A comprehensive development environment setup script with intelligent caching"
-  echo "and performance optimizations for macOS and Ubuntu/Debian systems."
+  echo "A comprehensive development environment setup script for macOS, Ubuntu/Debian, and Arch Linux systems."
   echo ""
   echo "USAGE:"
   echo "  $0 [OPTIONS]"
   echo ""
   echo "OPTIONS:"
   echo "  --cli-only        Skip GUI applications (useful for LXC containers/servers)"
-  echo "  --force           Force reinstallation of all components (ignores cache)"
   echo "  --skip-packages   Skip package installation step (faster config-only runs)"
   echo "  --help, -h        Show this comprehensive help message"
   echo ""
   echo "FEATURES:"
-  echo "  Performance Optimized:"
-  echo "    • State management system tracks completed installations"
-  echo "    • Intelligent caching prevents redundant operations"
-  echo "    • ~90% faster on subsequent runs"
-  echo "    • Enhanced validation functions for smart skipping"
   echo ""
   echo "  Package Management:"
-  echo "    • OS-specific package files (packages-linux.txt, packages-macos.txt)"
-  echo "    • Homebrew for macOS, apt/snap for Ubuntu"
+  echo "    • OS-specific package files (packages-linux.txt, packages-macos.txt, packages-arch.txt)"
+  echo "    • Homebrew for macOS, apt/snap for Ubuntu, pacman/yay for Arch"
   echo "    • Security-restricted custom commands"
   echo "    • Automatic snapd installation when needed"
   echo ""
@@ -163,23 +99,12 @@ show_help() {
   echo "    • Safe download functions with retries"
   echo "    • Rollback capability on failures"
   echo ""
-  echo "STATE MANAGEMENT:"
-  echo "  The script maintains installation state in ~/.dotfiles-setup-state"
-  echo "  This enables:"
-  echo "    • Skipping completed installations automatically"
-  echo "    • Version tracking for installed components"
-  echo "    • Resuming interrupted installations"
-  echo "    • Use --force to override and reinstall everything"
-  echo ""
   echo "EXAMPLES:"
   echo "  $0"
   echo "    ➤ Full installation with GUI applications"
   echo ""
   echo "  $0 --cli-only"
   echo "    ➤ Server/container setup (CLI tools only, no GUI apps)"
-  echo ""
-  echo "  $0 --force"
-  echo "    ➤ Force reinstall everything (ignore cached state)"
   echo ""
   echo "  $0 --skip-packages"
   echo "    ➤ Skip package installation, only run configuration steps"
@@ -196,15 +121,10 @@ show_help() {
   echo "  Dotfiles: Symlinked configuration files for all tools"
   echo "  Database: PostgreSQL user setup"
   echo ""
-  echo "PERFORMANCE NOTES:"
-  echo "  • First run: Full installation (10-20 minutes depending on system)"
-  echo "  • Subsequent runs: Only missing components (~1-2 minutes)"
-  echo "  • Use --skip-packages to save 5-10 minutes when packages exist"
-  echo "  • State file location: ~/.dotfiles-setup-state"
-  echo ""
   echo "SUPPORTED SYSTEMS:"
   echo "  macOS (Intel & Apple Silicon)"
   echo "  Ubuntu/Debian Linux"
+  echo "  Arch Linux"
   echo "  Other Linux distributions (NOT Tested)"
   echo ""
   echo "For more information, visit: https://github.com/przbadu/dotfiles"
@@ -216,10 +136,6 @@ parse_args() {
     case $1 in
       --cli-only)
         CLI_ONLY=true
-        shift
-        ;;
-      --force)
-        FORCE_REINSTALL=true
         shift
         ;;
       --skip-packages)
@@ -347,7 +263,9 @@ detect_os() {
   if [[ "$OSTYPE" == "darwin"* ]]; then
     echo "macos"
   elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    if command_exists apt; then
+    if command_exists pacman; then
+      echo "arch"
+    elif command_exists apt; then
       echo "ubuntu"
     else
       echo "linux"
@@ -491,11 +409,6 @@ install_zsh() {
 
 # Setup mise
 setup_mise() {
-  if is_completed "MISE"; then
-    log "mise installation already completed, skipping..."
-    return 0
-  fi
-
   if ! command_exists mise; then
     log "Installing mise..."
 
@@ -550,11 +463,8 @@ setup_mise() {
       exit 1
     fi
 
-    # Save state on successful installation
-    save_state "MISE" "$(mise --version 2>/dev/null || echo 'unknown')"
   else
     warn "mise already installed, skipping..."
-    save_state "MISE" "$(mise --version 2>/dev/null || echo 'unknown')"
   fi
 }
 
@@ -655,11 +565,6 @@ install_languages() {
 
 # Install uv (Python package manager)
 install_uv() {
-  if is_completed "UV"; then
-    log "uv installation already completed, skipping..."
-    return 0
-  fi
-
   if ! command_exists uv; then
     log "Installing uv (Python package manager)..."
 
@@ -701,21 +606,13 @@ install_uv() {
       return 1
     fi
 
-    # Save state on successful installation
-    save_state "UV" "$(uv --version 2>/dev/null || echo 'unknown')"
   else
     warn "uv already installed, skipping..."
-    save_state "UV" "$(uv --version 2>/dev/null || echo 'unknown')"
   fi
 }
 
 # Configure git
 configure_git() {
-  if is_completed "GIT_CONFIG"; then
-    log "Git configuration already completed, skipping..."
-    return 0
-  fi
-
   log "Checking git configuration..."
   if ! is_git_configured; then
     echo -n "Enter your git username: "
@@ -725,10 +622,8 @@ configure_git() {
     git config --global color.ui true
     git config --global user.name "${GIT_USERNAME}"
     git config --global user.email "${GIT_EMAIL}"
-    save_state "GIT_CONFIG" "${GIT_USERNAME}:${GIT_EMAIL}"
   else
     warn "Git already configured, skipping..."
-    save_state "GIT_CONFIG" "$(git config --global user.name):$(git config --global user.email)"
   fi
 }
 
@@ -827,11 +722,6 @@ verify_checksum() {
 
 # Install lazygit (Ubuntu only - macOS uses brew)
 install_lazygit() {
-  if is_completed "LAZYGIT"; then
-    log "lazygit installation already completed, skipping..."
-    return 0
-  fi
-
   log "Checking lazygit installation..."
   if ! command_exists lazygit; then
     local os=$(detect_os)
@@ -904,30 +794,24 @@ install_lazygit() {
 
       # Cleanup
       rm -f lazygit.tar.gz lazygit checksums.txt
+    elif [ "$os" = "arch" ]; then
+      log "lazygit should be installed via package manager on Arch Linux"
     else
       log "lazygit should be installed via package manager on macOS"
     fi
 
-    # Save state on successful installation or if already present
-    save_state "LAZYGIT" "$(lazygit --version 2>/dev/null | head -1 || echo 'unknown')"
   else
     warn "lazygit already installed, skipping..."
-    save_state "LAZYGIT" "$(lazygit --version 2>/dev/null | head -1 || echo 'unknown')"
   fi
 }
 
 # Install JetBrains Mono Nerd Font
 install_nerd_fonts() {
-  if is_completed "NERD_FONTS"; then
-    log "JetBrains Mono Nerd Font installation already completed, skipping..."
-    return 0
-  fi
-
   log "Checking JetBrains Mono Nerd Font installation..."
 
   local os=$(detect_os)
-  if [ "$os" = "ubuntu" ]; then
-    log "Installing JetBrains Mono Nerd Font for Ubuntu..."
+  if [ "$os" = "ubuntu" ] || [ "$os" = "arch" ]; then
+    log "Installing JetBrains Mono Nerd Font for Linux..."
 
     # Check if fonts directory exists, if not create it
     local fonts_dir="/usr/local/share/fonts"
@@ -964,14 +848,12 @@ install_nerd_fonts() {
       run_with_sudo fc-cache -fv
 
       log "JetBrains Mono Nerd Font installed successfully"
-      save_state "NERD_FONTS" "latest"
     else
       error "Failed to download JetBrains Mono Nerd Font"
       return 1
     fi
   else
     log "JetBrains Mono Nerd Font should be installed via package manager on macOS"
-    save_state "NERD_FONTS" "system"
   fi
 }
 
@@ -986,6 +868,9 @@ install_packages() {
       ;;
     "ubuntu")
       packages_file="packages-linux.txt"
+      ;;
+    "arch")
+      packages_file="packages-arch.txt"
       ;;
     *)
       warn "Unsupported OS: $os. Skipping package installation."
@@ -1006,6 +891,9 @@ install_packages() {
       ;;
     "ubuntu")
       install_ubuntu_packages "$packages_file"
+      ;;
+    "arch")
+      install_arch_packages "$packages_file"
       ;;
   esac
 }
@@ -1124,13 +1012,91 @@ install_ubuntu_packages() {
   done <"$packages_file"
 }
 
-# setup database
-setup_database() {
-  if is_completed "POSTGRES_SETUP"; then
-    log "PostgreSQL setup already completed, skipping..."
-    return 0
+# Install packages on Arch Linux using pacman and yay
+install_arch_packages() {
+  local packages_file="$1"
+
+  # Check if yay is installed, if not install it
+  if ! command_exists yay; then
+    log "Installing yay (AUR helper)..."
+
+    # Install base-devel and git if not present
+    run_with_sudo pacman -Sy --needed --noconfirm base-devel git
+
+    # Create temporary directory for yay installation
+    local temp_dir=$(mktemp -d)
+    track_temp_dir "$temp_dir"
+    cd "$temp_dir"
+
+    # Clone yay repository
+    git clone https://aur.archlinux.org/yay.git
+    cd yay
+
+    # Build and install yay
+    makepkg -si --noconfirm
+
+    log "yay installed successfully"
   fi
 
+  # Update package databases
+  log "Updating package databases..."
+  run_with_sudo pacman -Sy
+
+  # Read packages from file and install
+  while IFS= read -r line; do
+    # Skip comments and empty lines
+    if [[ "$line" =~ ^#.*$ ]] || [[ -z "$line" ]]; then
+      continue
+    fi
+
+    # Check if it's a warning message
+    if [[ "$line" =~ ^warn ]]; then
+      local warning_msg=$(echo "$line" | sed 's/^warn *//')
+      warn "$warning_msg"
+      # Check if it's a safe custom command (only allow specific package managers)
+    elif [[ "$line" =~ ^(sudo pacman |yay -S ).* ]]; then
+      # Skip GUI applications in CLI-only mode (basic heuristic)
+      if [[ "$line" =~ (firefox|chrome|spotify|slack|obsidian|pgadmin) ]] && [ "$CLI_ONLY" = true ]; then
+        log "Skipping GUI app command (--cli-only): $line"
+        continue
+      fi
+      log "Executing package command: $line"
+      # Replace sudo with run_with_sudo in the command
+      local safe_command=$(echo "$line" | sed 's/^sudo //')
+      if [[ "$line" =~ ^sudo ]]; then
+        eval "run_with_sudo $safe_command" || warn "Failed to execute package command: $line"
+      else
+        eval "$line" || warn "Failed to execute package command: $line"
+      fi
+      # Check if it's an AUR package
+    elif [[ "$line" =~ ^aur: ]]; then
+      if [ "$CLI_ONLY" = true ]; then
+        # Check if it's a GUI package (basic heuristic)
+        if [[ "$line" =~ (firefox|chrome|spotify|slack|obsidian|pgadmin) ]]; then
+          log "Skipping GUI app (--cli-only): $line"
+          continue
+        fi
+      fi
+      package=$(echo "$line" | sed 's/^aur: *//')
+      log "Installing AUR package: $package"
+      yay -S --noconfirm "$package" || warn "Failed to install AUR package: $package"
+    else
+      # Regular pacman package
+      if [ "$CLI_ONLY" = true ]; then
+        # Check if it's a GUI package (basic heuristic)
+        if [[ "$line" =~ (firefox|chrome|spotify|slack|obsidian|pgadmin) ]]; then
+          log "Skipping GUI app (--cli-only): $line"
+          continue
+        fi
+      fi
+      log "Installing pacman package: $line"
+      run_with_sudo pacman -S --needed --noconfirm "$line" || warn "Failed to install pacman package: $line"
+    fi
+  done <"$packages_file"
+}
+
+# setup database
+setup_database() {
   if ! command_exists psql; then
     error "PostgreSQL is not installed. Please install it first."
     error "On Ubuntu/Debian: sudo apt install postgresql libpq-dev"
@@ -1147,13 +1113,13 @@ setup_database() {
     if [ "$os" = "macos" ]; then
       # On macOS, create user directly
       createuser $USER -s 2>/dev/null || psql postgres -c "CREATE USER $USER WITH SUPERUSER;" 2>/dev/null
-    else
-      # On Linux, use postgres user
+    elif [ "$os" = "ubuntu" ]; then
+      # On Ubuntu, use postgres user
+      # Arch is causing issue with this script, enable it for arch, once the error is resolved
       run_with_sudo -u postgres createuser $USER -s
     fi
   fi
 
-  save_state "POSTGRES_SETUP" "$USER"
 }
 
 # Copy dotfiles
@@ -1233,7 +1199,8 @@ check_system_requirements() {
 }
 
 install_custom_packages() {
-  if [ "$os" = "ubuntu" ] && need_sudo; then
+  local os=$(detect_os)
+  if ([ "$os" = "ubuntu" ] || [ "$os" = "arch" ]) && need_sudo; then
     if ! command_exists heroku; then
       log "Installing heroku cli"
       curl https://cli-assets.heroku.com/install.sh | sh
@@ -1241,10 +1208,15 @@ install_custom_packages() {
 
     log "Install stripe"
     if ! command_exists stripe; then
-      curl -s https://packages.stripe.dev/api/security/keypair/stripe-cli-gpg/public | gpg --dearmor | sudo tee /usr/share/keyrings/stripe.gpg
-      echo "deb [signed-by=/usr/share/keyrings/stripe.gpg] https://packages.stripe.dev/stripe-cli-debian-local stable main" | sudo tee -a /etc/apt/sources.list.d/stripe.list
-      sudo apt update
-      sudo apt install stripe
+      if [ "$os" = "ubuntu" ]; then
+        curl -s https://packages.stripe.dev/api/security/keypair/stripe-cli-gpg/public | gpg --dearmor | sudo tee /usr/share/keyrings/stripe.gpg
+        echo "deb [signed-by=/usr/share/keyrings/stripe.gpg] https://packages.stripe.dev/stripe-cli-debian-local stable main" | sudo tee -a /etc/apt/sources.list.d/stripe.list
+        sudo apt update
+        sudo apt install stripe
+      elif [ "$os" = "arch" ]; then
+        log "Installing stripe-cli from AUR..."
+        yay -S --noconfirm stripe-cli || warn "Failed to install stripe-cli from AUR"
+      fi
     fi
   fi
 }
@@ -1290,6 +1262,11 @@ main() {
   copy_dotfiles
   setup_database
   install_custom_packages
+
+  log "final cleanup"
+  # use our new config for zshrc and neovim
+  git checkout .zshrc
+  git checkout .config/
 
   log "Installation completed successfully!"
 
