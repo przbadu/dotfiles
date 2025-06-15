@@ -1,51 +1,60 @@
-# Linux Package List
-# This file contains packages to install on Linux
+# Arch Linux Package List
+# This file contains packages to install on Arch Linux
 # Format:
-#   - arch packages: package-name (Yay, will be used to install the packages)
+#   - pacman packages: package-name
+#   - AUR packages: aur: package-name
+#   - Custom commands: sudo pacman ... or yay -S ...
 #   - Comments start with #
 
-## CLI Packages (apt)
+## CLI Packages (pacman)
 neovim
 git
 base-devel
-build-essential
 curl
 wget
-btop # check
+btop
 tree
-jq # check
+jq
 ripgrep
-fd-find
-bat # check
-gh
+fd
+bat
+github-cli
 zsh
-neovim
-fzf # check
-rustc
-libssl-dev
-libyaml-dev
-zlib1g-dev
-libgmp-dev
-tmux # check
-software-properties-common
-apt-transport-https
-ca-certificates # check
+fzf
+rust
+openssl
+libyaml
+zlib
+gmp
+tmux
 gnupg
-neofetch # check
+neofetch
 stow
 timeshift
-sqlite3
-libpq-dev
+sqlite
+postgresql-libs
 postgresql
-fonts-jetbrains-mono
+ttf-jetbrains-mono-nerd
 zoxide
 flameshot
-libxml2-dev
-libxslt1-dev
-slack
+libxml2
+libxslt
+redis
+
+## Development Libraries
+openssl-1.1
+
+## GUI Applications (AUR where needed)
+aur: slack-desktop
 firefox
 docker
-spotify
-obsidian
-pgadmin4
-redis
+aur: spotify
+aur: obsidian
+aur: pgadmin4
+aur: ghostty-bin
+
+## Additional Tools
+unzip
+zip
+htop
+vim
