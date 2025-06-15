@@ -1113,8 +1113,9 @@ setup_database() {
     if [ "$os" = "macos" ]; then
       # On macOS, create user directly
       createuser $USER -s 2>/dev/null || psql postgres -c "CREATE USER $USER WITH SUPERUSER;" 2>/dev/null
-    else
-      # On Linux, use postgres user
+    elif [ "$os" = "ubuntu" ]; then
+      # On Ubuntu, use postgres user
+      # Arch is causing issue with this script, enable it for arch, once the error is resolved
       run_with_sudo -u postgres createuser $USER -s
     fi
   fi
@@ -1261,6 +1262,11 @@ main() {
   copy_dotfiles
   setup_database
   install_custom_packages
+
+  log "final cleanup"
+  # use our new config for zshrc and neovim
+  git checkout .zshrc
+  git checkout .config/
 
   log "Installation completed successfully!"
 
