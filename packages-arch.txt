@@ -52,6 +52,7 @@ docker
 aur: spotify
 aur: obsidian
 aur: pgadmin4
+aur: localsend-bin
 
 ## Additional Tools
 unzip
