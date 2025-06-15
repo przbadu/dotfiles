@@ -1,0 +1,61 @@
+# Arch Linux Package List
+# This file contains packages to install on Arch Linux
+# Format:
+#   - pacman packages: package-name
+#   - AUR packages: aur: package-name
+#   - Custom commands: sudo pacman ... or yay -S ...
+#   - Comments start with #
+
+## CLI Packages (pacman)
+neovim
+git
+base-devel
+curl
+wget
+btop
+tree
+jq
+ripgrep
+fd
+bat
+github-cli
+zsh
+fzf
+rust
+openssl
+libyaml
+zlib
+gmp
+tmux
+gnupg
+stow
+timeshift
+sqlite
+postgresql-libs
+postgresql
+ttf-jetbrains-mono-nerd
+zoxide
+flameshot
+libxml2
+libxslt
+redis
+lazygit
+ghostty
+
+## Development Libraries
+openssl-1.1
+
+## GUI Applications (AUR where needed)
+aur: slack-desktop
+firefox
+docker
+aur: spotify
+aur: obsidian
+aur: pgadmin4
+aur: localsend-bin
+
+## Additional Tools
+unzip
+zip
+htop
+vim
