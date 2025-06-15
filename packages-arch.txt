@@ -1,0 +1,51 @@
+# Linux Package List
+# This file contains packages to install on Linux
+# Format:
+#   - arch packages: package-name (Yay, will be used to install the packages)
+#   - Comments start with #
+
+## CLI Packages (apt)
+neovim
+git
+base-devel
+build-essential
+curl
+wget
+btop # check
+tree
+jq # check
+ripgrep
+fd-find
+bat # check
+gh
+zsh
+neovim
+fzf # check
+rustc
+libssl-dev
+libyaml-dev
+zlib1g-dev
+libgmp-dev
+tmux # check
+software-properties-common
+apt-transport-https
+ca-certificates # check
+gnupg
+neofetch # check
+stow
+timeshift
+sqlite3
+libpq-dev
+postgresql
+fonts-jetbrains-mono
+zoxide
+flameshot
+libxml2-dev
+libxslt1-dev
+slack
+firefox
+docker
+spotify
+obsidian
+pgadmin4
+redis
