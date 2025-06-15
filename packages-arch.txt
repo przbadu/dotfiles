@@ -28,7 +28,6 @@ zlib
 gmp
 tmux
 gnupg
-neofetch
 stow
 timeshift
 sqlite
