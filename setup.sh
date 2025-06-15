@@ -118,7 +118,7 @@ is_postgres_user_created() {
 # Function to show help
 show_help() {
   echo "A comprehensive development environment setup script with intelligent caching"
-  echo "and performance optimizations for macOS and Ubuntu/Debian systems."
+  echo "and performance optimizations for macOS, Ubuntu/Debian, and Arch Linux systems."
   echo ""
   echo "USAGE:"
   echo "  $0 [OPTIONS]"
@@ -137,8 +137,8 @@ show_help() {
   echo "    • Enhanced validation functions for smart skipping"
   echo ""
   echo "  Package Management:"
-  echo "    • OS-specific package files (packages-linux.txt, packages-macos.txt)"
-  echo "    • Homebrew for macOS, apt/snap for Ubuntu"
+  echo "    • OS-specific package files (packages-linux.txt, packages-macos.txt, packages-arch.txt)"
+  echo "    • Homebrew for macOS, apt/snap for Ubuntu, pacman/yay for Arch"
   echo "    • Security-restricted custom commands"
   echo "    • Automatic snapd installation when needed"
   echo ""
@@ -205,6 +205,7 @@ show_help() {
   echo "SUPPORTED SYSTEMS:"
   echo "  macOS (Intel & Apple Silicon)"
   echo "  Ubuntu/Debian Linux"
+  echo "  Arch Linux"
   echo "  Other Linux distributions (NOT Tested)"
   echo ""
   echo "For more information, visit: https://github.com/przbadu/dotfiles"
@@ -347,7 +348,9 @@ detect_os() {
   if [[ "$OSTYPE" == "darwin"* ]]; then
     echo "macos"
   elif [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    if command_exists apt; then
+    if command_exists pacman; then
+      echo "arch"
+    elif command_exists apt; then
       echo "ubuntu"
     else
       echo "linux"
@@ -904,6 +907,8 @@ install_lazygit() {
 
       # Cleanup
       rm -f lazygit.tar.gz lazygit checksums.txt
+    elif [ "$os" = "arch" ]; then
+      log "lazygit should be installed via package manager on Arch Linux"
     else
       log "lazygit should be installed via package manager on macOS"
     fi
@@ -926,8 +931,8 @@ install_nerd_fonts() {
   log "Checking JetBrains Mono Nerd Font installation..."
 
   local os=$(detect_os)
-  if [ "$os" = "ubuntu" ]; then
-    log "Installing JetBrains Mono Nerd Font for Ubuntu..."
+  if [ "$os" = "ubuntu" ] || [ "$os" = "arch" ]; then
+    log "Installing JetBrains Mono Nerd Font for Linux..."
 
     # Check if fonts directory exists, if not create it
     local fonts_dir="/usr/local/share/fonts"
@@ -987,6 +992,9 @@ install_packages() {
     "ubuntu")
       packages_file="packages-linux.txt"
       ;;
+    "arch")
+      packages_file="packages-arch.txt"
+      ;;
     *)
       warn "Unsupported OS: $os. Skipping package installation."
       return
@@ -1006,6 +1014,9 @@ install_packages() {
       ;;
     "ubuntu")
       install_ubuntu_packages "$packages_file"
+      ;;
+    "arch")
+      install_arch_packages "$packages_file"
       ;;
   esac
 }
@@ -1124,6 +1135,89 @@ install_ubuntu_packages() {
   done <"$packages_file"
 }
 
+# Install packages on Arch Linux using pacman and yay
+install_arch_packages() {
+  local packages_file="$1"
+
+  # Check if yay is installed, if not install it
+  if ! command_exists yay; then
+    log "Installing yay (AUR helper)..."
+
+    # Install base-devel and git if not present
+    run_with_sudo pacman -Sy --needed --noconfirm base-devel git
+
+    # Create temporary directory for yay installation
+    local temp_dir=$(mktemp -d)
+    track_temp_dir "$temp_dir"
+    cd "$temp_dir"
+
+    # Clone yay repository
+    git clone https://aur.archlinux.org/yay.git
+    cd yay
+
+    # Build and install yay
+    makepkg -si --noconfirm
+
+    log "yay installed successfully"
+  fi
+
+  # Update package databases
+  log "Updating package databases..."
+  run_with_sudo pacman -Sy
+
+  # Read packages from file and install
+  while IFS= read -r line; do
+    # Skip comments and empty lines
+    if [[ "$line" =~ ^#.*$ ]] || [[ -z "$line" ]]; then
+      continue
+    fi
+
+    # Check if it's a warning message
+    if [[ "$line" =~ ^warn ]]; then
+      local warning_msg=$(echo "$line" | sed 's/^warn *//')
+      warn "$warning_msg"
+      # Check if it's a safe custom command (only allow specific package managers)
+    elif [[ "$line" =~ ^(sudo pacman |yay -S ).* ]]; then
+      # Skip GUI applications in CLI-only mode (basic heuristic)
+      if [[ "$line" =~ (firefox|chrome|spotify|slack|obsidian|pgadmin) ]] && [ "$CLI_ONLY" = true ]; then
+        log "Skipping GUI app command (--cli-only): $line"
+        continue
+      fi
+      log "Executing package command: $line"
+      # Replace sudo with run_with_sudo in the command
+      local safe_command=$(echo "$line" | sed 's/^sudo //')
+      if [[ "$line" =~ ^sudo ]]; then
+        eval "run_with_sudo $safe_command" || warn "Failed to execute package command: $line"
+      else
+        eval "$line" || warn "Failed to execute package command: $line"
+      fi
+      # Check if it's an AUR package
+    elif [[ "$line" =~ ^aur: ]]; then
+      if [ "$CLI_ONLY" = true ]; then
+        # Check if it's a GUI package (basic heuristic)
+        if [[ "$line" =~ (firefox|chrome|spotify|slack|obsidian|pgadmin) ]]; then
+          log "Skipping GUI app (--cli-only): $line"
+          continue
+        fi
+      fi
+      package=$(echo "$line" | sed 's/^aur: *//')
+      log "Installing AUR package: $package"
+      yay -S --noconfirm "$package" || warn "Failed to install AUR package: $package"
+    else
+      # Regular pacman package
+      if [ "$CLI_ONLY" = true ]; then
+        # Check if it's a GUI package (basic heuristic)
+        if [[ "$line" =~ (firefox|chrome|spotify|slack|obsidian|pgadmin) ]]; then
+          log "Skipping GUI app (--cli-only): $line"
+          continue
+        fi
+      fi
+      log "Installing pacman package: $line"
+      run_with_sudo pacman -S --needed --noconfirm "$line" || warn "Failed to install pacman package: $line"
+    fi
+  done <"$packages_file"
+}
+
 # setup database
 setup_database() {
   if is_completed "POSTGRES_SETUP"; then
@@ -1233,7 +1327,8 @@ check_system_requirements() {
 }
 
 install_custom_packages() {
-  if [ "$os" = "ubuntu" ] && need_sudo; then
+  local os=$(detect_os)
+  if ([ "$os" = "ubuntu" ] || [ "$os" = "arch" ]) && need_sudo; then
     if ! command_exists heroku; then
       log "Installing heroku cli"
       curl https://cli-assets.heroku.com/install.sh | sh
@@ -1241,10 +1336,15 @@ install_custom_packages() {
 
     log "Install stripe"
     if ! command_exists stripe; then
-      curl -s https://packages.stripe.dev/api/security/keypair/stripe-cli-gpg/public | gpg --dearmor | sudo tee /usr/share/keyrings/stripe.gpg
-      echo "deb [signed-by=/usr/share/keyrings/stripe.gpg] https://packages.stripe.dev/stripe-cli-debian-local stable main" | sudo tee -a /etc/apt/sources.list.d/stripe.list
-      sudo apt update
-      sudo apt install stripe
+      if [ "$os" = "ubuntu" ]; then
+        curl -s https://packages.stripe.dev/api/security/keypair/stripe-cli-gpg/public | gpg --dearmor | sudo tee /usr/share/keyrings/stripe.gpg
+        echo "deb [signed-by=/usr/share/keyrings/stripe.gpg] https://packages.stripe.dev/stripe-cli-debian-local stable main" | sudo tee -a /etc/apt/sources.list.d/stripe.list
+        sudo apt update
+        sudo apt install stripe
+      elif [ "$os" = "arch" ]; then
+        log "Installing stripe-cli from AUR..."
+        yay -S --noconfirm stripe-cli || warn "Failed to install stripe-cli from AUR"
+      fi
     fi
   fi
 }
