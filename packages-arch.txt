@@ -40,6 +40,7 @@ libxml2
 libxslt
 redis
 lazygit
+ghostty
 
 ## Development Libraries
 openssl-1.1
@@ -51,7 +52,6 @@ docker
 aur: spotify
 aur: obsidian
 aur: pgadmin4
-aur: ghostty-bin
 
 ## Additional Tools
 unzip
