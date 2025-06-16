@@ -1163,7 +1163,7 @@ copy_dotfiles() {
 
   # Stow all dotfiles from the current directory
   log "Symlinking dotfiles"
-  stow --adopt --ignore=setup.sh --ignore=packages-linux.txt --ignore=packages-macos.txt --ignore=todo.txt --ignore=README.md .
+  stow --adopt --ignore=setup.sh --ignore=packages-arch --ignore=packages-linux.txt --ignore=packages-macos.txt --ignore=todo.txt --ignore=README.md .
 
   if [ ! -d "${HOME}/.tmux/plugins/tpm" ]; then
     log "Install tmux package manager inside ~/.tmux/plugins/tpm"
