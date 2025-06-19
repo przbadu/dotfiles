@@ -16,9 +16,30 @@ vim.api.nvim_create_autocmd({ "FileType" }, {
   end,
 })
 
--- Enable autoread and set up checking triggers
+-- Enable autoread and set up checking triggers for VSCode-like auto-reload behavior
 vim.o.autoread = true
-vim.api.nvim_create_autocmd({ "FocusGained", "BufEnter" }, {
+
+-- Primary auto-reload: Check for file changes on key events
+-- BufEnter: When switching to a buffer
+-- CursorHold: After 'updatetime' milliseconds of inactivity
+-- CursorHoldI: Same as CursorHold but in insert mode
+-- FocusGained: When Neovim window gains focus
+vim.api.nvim_create_autocmd({ "BufEnter", "CursorHold", "CursorHoldI", "FocusGained" }, {
   command = "if mode() != 'c' | checktime | endif",
-  pattern = "*",
+  pattern = { "*" },
 })
+
+-- Enhanced responsiveness: Check for file changes during cursor movement
+-- CursorMoved: When cursor moves in normal mode
+-- CursorMovedI: When cursor moves in insert mode
+-- This makes file reloading more immediate, similar to VSCode behavior
+vim.api.nvim_create_autocmd({ "CursorMoved", "CursorMovedI" }, {
+  callback = function()
+    if vim.fn.mode() ~= 'c' then
+      vim.cmd('checktime')
+    end
+  end,
+})
+
+-- Set shorter updatetime for better responsiveness
+vim.o.updatetime = 250
