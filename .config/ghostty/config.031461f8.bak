@@ -16,4 +16,3 @@ window-height = 30
 # Misc Configuration
 shell-integration = zsh
 confirm-close-surface = false
-keybind = shift+enter=text:\n
