@@ -2,6 +2,28 @@
 -- Default keymaps that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/keymaps.lua
 -- Add any additional keymaps here
 
+-- Tmux navigation
+local function tmux_navigate(direction)
+  local tmux_direction = { h = "L", j = "D", k = "U", l = "R" }
+  local at_edge = {
+    h = function() return vim.fn.winnr() == vim.fn.winnr("h") end,
+    j = function() return vim.fn.winnr() == vim.fn.winnr("j") end,
+    k = function() return vim.fn.winnr() == vim.fn.winnr("k") end,
+    l = function() return vim.fn.winnr() == vim.fn.winnr("l") end,
+  }
+  
+  if at_edge[direction]() then
+    vim.fn.system("tmux select-pane -" .. tmux_direction[direction])
+  else
+    vim.cmd("wincmd " .. direction)
+  end
+end
+
+vim.keymap.set("n", "<C-h>", function() tmux_navigate("h") end, { desc = "Go to Left Window or Tmux Pane" })
+vim.keymap.set("n", "<C-j>", function() tmux_navigate("j") end, { desc = "Go to Lower Window or Tmux Pane" })
+vim.keymap.set("n", "<C-k>", function() tmux_navigate("k") end, { desc = "Go to Upper Window or Tmux Pane" })
+vim.keymap.set("n", "<C-l>", function() tmux_navigate("l") end, { desc = "Go to Right Window or Tmux Pane" })
+
 local keymap = vim.api.nvim_set_keymap
 local default_opts = { noremap = true, silent = true }
 
