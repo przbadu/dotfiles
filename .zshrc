@@ -89,7 +89,7 @@ export SUDO_EDITOR="nvim"
 alias ls='ls --color'
 alias e='nvim'
 alias rc="rails c"
-alias rs="rails s"
+alias rs='kill -9 $(lsof -ti :3000) 2>/dev/null; rails s'
 alias sk="bundle exec sidekiq -c 1 -v"
 alias es7="docker start elesticsearch_7 || docker run -d --name elesticsearch_7 -p 9200:9200 -e \"http.host=0.0.0.0\" -e \"transport.host=127.0.0.1\" docker.elastic.co/elasticsearch/elasticsearch:7.10.1"
 alias redis="docker start redis || docker run -d --name redis -p 6379:6379 redis"
