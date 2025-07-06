@@ -1,0 +1,434 @@
+#!/usr/bin/env zsh
+#
+export OLLAMA_HOST="http://192.168.1.72:11434"
+export ASK_MODEL="gemma3:12b"
+export CODE_MODEL="qwen2.5-coder:14b"
+export FAST_MODEL="gemma3n:latest"
+export INSTRUCT_MODEL="qwen2.5-coder:7b-instruct"
+
+# Main streaming function with proper JSON parsing
+ask() {
+  local prompt="$*"
+  local model="${ASK_MODEL:-gemma3:12b}"
+  
+  # Show a loading indicator
+  echo -ne "\033[33m◉ Thinking...\033[0m\r"
+  
+  # Stream the response
+  curl -sN ${OLLAMA_HOST}/api/generate \
+    -H "Content-Type: application/json" \
+    -d "{\"model\": \"$model\", \"prompt\": \"$prompt\", \"stream\": true}" \
+    2>/dev/null | {
+      local first_response=true
+      while IFS= read -r line; do
+        # Skip empty lines
+        [[ -z "$line" ]] && continue
+        
+        # Clear the loading indicator on first response
+        if [[ "$first_response" == true ]] && [[ ! -z "$line" ]]; then
+          echo -ne "\033[K"
+          first_response=false
+        fi
+        
+        # Parse and print the response fragment
+        response=$(echo "$line" | jq -r '.response // empty' 2>/dev/null)
+        if [[ ! -z "$response" ]]; then
+          printf "%s" "$response"
+        fi
+        
+        # Check if this is the final response
+        done=$(echo "$line" | jq -r '.done // false' 2>/dev/null)
+        if [[ "$done" == "true" ]]; then
+          echo # New line after completion
+          break
+        fi
+      done
+    }
+}
+
+# Code helper with streaming
+code_help() {
+  local prompt="$*"
+  local model="${CODE_MODEL:-qwen2.5-coder:14b}"
+  
+  # Show a loading indicator
+  echo -ne "\033[34m◉ Analyzing code...\033[0m\r"
+  
+  # Stream the response
+  curl -sN ${OLLAMA_HOST}/api/generate \
+    -H "Content-Type: application/json" \
+    -d "{\"model\": \"$model\", \"prompt\": \"$prompt\", \"stream\": true}" \
+    2>/dev/null | {
+      local first_response=true
+      while IFS= read -r line; do
+        # Skip empty lines
+        [[ -z "$line" ]] && continue
+        
+        # Clear the loading indicator on first response
+        if [[ "$first_response" == true ]] && [[ ! -z "$line" ]]; then
+          echo -ne "\033[K"
+          first_response=false
+        fi
+        
+        # Parse and print the response fragment
+        response=$(echo "$line" | jq -r '.response // empty' 2>/dev/null)
+        if [[ ! -z "$response" ]]; then
+          printf "%s" "$response"
+        fi
+        
+        # Check if this is the final response
+        done=$(echo "$line" | jq -r '.done // false' 2>/dev/null)
+        if [[ "$done" == "true" ]]; then
+          echo # New line after completion
+          break
+        fi
+      done
+    }
+}
+
+# Alternative implementation using different approach
+ask_alt() {
+  local prompt="$*"
+  local model="${ASK_MODEL:-gemma3n}"
+  
+  echo -ne "\033[33m◉ Thinking...\033[0m\r"
+  
+  # Use process substitution to avoid subshell issues
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    
+    # Clear loading message on first real response
+    if [[ -n "$line" ]]; then
+      echo -ne "\033[K"
+    fi
+    
+    # Extract and print response
+    if response=$(echo "$line" | jq -r '.response // empty' 2>/dev/null); then
+      if [[ -n "$response" ]]; then
+        printf "%s" "$response"
+      fi
+    fi
+    
+    # Check if done
+    if [[ $(echo "$line" | jq -r '.done // false' 2>/dev/null) == "true" ]]; then
+      echo
+      break
+    fi
+  done < <(curl -sN ${OLLAMA_HOST}/api/generate \
+    -H "Content-Type: application/json" \
+    -d "{\"model\": \"$model\", \"prompt\": \"$prompt\", \"stream\": true}" 2>/dev/null)
+}
+
+# Debug version to see what's happening
+ask_debug() {
+  local prompt="$*"
+  local model="${ASK_MODEL:-deepcoder}"
+  
+  echo "Debug mode - showing raw responses:"
+  echo "Model: $model"
+  echo "Prompt: $prompt"
+  echo "Host: ${OLLAMA_HOST:-localhost:11434}"
+  echo "---"
+  
+  curl -sN ${OLLAMA_HOST}/api/generate \
+    -H "Content-Type: application/json" \
+    -d "{\"model\": \"$model\", \"prompt\": \"$prompt\", \"stream\": true}" \
+    2>&1 | while IFS= read -r line; do
+      echo "RAW: $line"
+      if [[ ! -z "$line" ]]; then
+        response=$(echo "$line" | jq -r '.response // empty' 2>/dev/null)
+        if [[ ! -z "$response" ]]; then
+          echo "PARSED: $response"
+        fi
+      fi
+    done
+}
+
+# Non-streaming version (if you still want it for scripts/automation)
+ask_json() {
+  local prompt="$*"
+  local model="${ASK_MODEL:-qwen2.5-coder:14b}"
+  
+  curl -s ${OLLAMA_HOST}/api/generate \
+    -H "Content-Type: application/json" \
+    -d "{\"model\": \"$model\", \"prompt\": \"$prompt\", \"stream\": false}" \
+    | jq -r '.response'
+}
+
+# Enhanced streaming with progress indicator
+ask_verbose() {
+  local prompt="$*"
+  local model="${ASK_MODEL:-qwen2.5-coder:14b}"
+  local chars=0
+  
+  echo -e "\033[36m━━━ AI Response ━━━\033[0m"
+  
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    
+    response=$(echo "$line" | jq -r '.response // empty' 2>/dev/null)
+    if [[ ! -z "$response" ]]; then
+      printf "%s" "$response"
+      chars=$((chars + ${#response}))
+    fi
+    
+    done=$(echo "$line" | jq -r '.done // false' 2>/dev/null)
+    if [[ "$done" == "true" ]]; then
+      echo -e "\n\033[36m━━━ Complete ($chars chars) ━━━\033[0m"
+      break
+    fi
+  done < <(curl -sN ${OLLAMA_HOST}/api/generate \
+    -H "Content-Type: application/json" \
+    -d "{\"model\": \"$model\", \"prompt\": \"$prompt\", \"stream\": true}" 2>/dev/null)
+}
+
+# Multi-model helper
+ask_with() {
+  local model="$1"
+  shift
+  local prompt="$*"
+  
+  if [[ -z "$model" || -z "$prompt" ]]; then
+    echo "Usage: ask_with <model> <prompt>"
+    echo "Example: ask_with llama2 'Explain quantum computing'"
+    return 1
+  fi
+  
+  echo -ne "\033[35m◉ Using $model...\033[0m\r"
+  
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    echo -ne "\033[K"
+    
+    response=$(echo "$line" | jq -r '.response // empty' 2>/dev/null)
+    if [[ ! -z "$response" ]]; then
+      printf "%s" "$response"
+    fi
+    
+    done=$(echo "$line" | jq -r '.done // false' 2>/dev/null)
+    if [[ "$done" == "true" ]]; then
+      echo
+      break
+    fi
+  done < <(curl -sN ${OLLAMA_HOST}/api/generate \
+    -H "Content-Type: application/json" \
+    -d "{\"model\": \"$model\", \"prompt\": \"$prompt\", \"stream\": true}" 2>/dev/null)
+}
+
+# List available models
+ollama_models() {
+  curl -s ${OLLAMA_HOST}/api/tags | jq -r '.models[].name' | sort
+}
+
+# Set default Ollama host if not set
+: ${OLLAMA_HOST:=localhost:11434}
+
+# Set default models (optional)
+export ASK_MODEL="gemma3:12b"
+export CODE_MODEL="qwen2.5-coder:14b"
+export FAST_MODEL="gemma3:latest"
+export INSTRUCT_MODEL="qwen2.5-coder:7b-instruct"
+
+# Enhanced functions with verbose output and markdown formatting
+ask_md() {
+  local prompt="$*"
+  local model="${ASK_MODEL:-gemma3:12b}"
+  local start_time=$(date +%s)
+  local tokens=0
+  
+  echo -e "\033[36m┌─ AI Assistant (Markdown) ─────────────────────────────────────────┐\033[0m"
+  echo -e "\033[36m│ Model: $model\033[0m"
+  echo -e "\033[36m│ Host: $OLLAMA_HOST\033[0m"
+  echo -e "\033[36m└────────────────────────────────────────────────────────────────────┘\033[0m"
+  echo
+  
+  # Enhanced prompt for markdown output
+  local enhanced_prompt="Please format your response in proper Markdown with appropriate headers, code blocks, lists, and emphasis. $prompt"
+  
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    
+    response=$(echo "$line" | jq -r '.response // empty' 2>/dev/null)
+    if [[ ! -z "$response" ]]; then
+      printf "%s" "$response"
+      tokens=$((tokens + 1))
+    fi
+    
+    done=$(echo "$line" | jq -r '.done // false' 2>/dev/null)
+    if [[ "$done" == "true" ]]; then
+      local end_time=$(date +%s)
+      local duration=$((end_time - start_time))
+      local tps=$(( tokens > 0 && duration > 0 ? tokens / duration : 0 ))
+      
+      echo
+      echo -e "\033[36m┌─ Response Statistics ─────────────────────────────────────────────┐\033[0m"
+      echo -e "\033[36m│ Tokens: ~$tokens │ Duration: ${duration}s │ Speed: ~${tps} tok/s\033[0m"
+      echo -e "\033[36m└────────────────────────────────────────────────────────────────────┘\033[0m"
+      break
+    fi
+  done < <(curl -sN ${OLLAMA_HOST}/api/generate \
+    -H "Content-Type: application/json" \
+    -d "{\"model\": \"$model\", \"prompt\": \"$enhanced_prompt\", \"stream\": true}" 2>/dev/null)
+}
+
+code_md() {
+  local prompt="$*"
+  local model="${CODE_MODEL:-qwen2.5-coder:14b}"
+  local start_time=$(date +%s)
+  local tokens=0
+  
+  echo -e "\033[34m┌─ Code Assistant (Markdown) ───────────────────────────────────────┐\033[0m"
+  echo -e "\033[34m│ Model: $model\033[0m"
+  echo -e "\033[34m│ Host: $OLLAMA_HOST\033[0m"
+  echo -e "\033[34m└────────────────────────────────────────────────────────────────────┘\033[0m"
+  echo
+  
+  # Enhanced prompt for code with markdown
+  local enhanced_prompt="Please format your response in proper Markdown. Use appropriate code blocks with syntax highlighting, headers, and explanations. $prompt"
+  
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    
+    response=$(echo "$line" | jq -r '.response // empty' 2>/dev/null)
+    if [[ ! -z "$response" ]]; then
+      printf "%s" "$response"
+      tokens=$((tokens + 1))
+    fi
+    
+    done=$(echo "$line" | jq -r '.done // false' 2>/dev/null)
+    if [[ "$done" == "true" ]]; then
+      local end_time=$(date +%s)
+      local duration=$((end_time - start_time))
+      local tps=$(( tokens > 0 && duration > 0 ? tokens / duration : 0 ))
+      
+      echo
+      echo -e "\033[34m┌─ Response Statistics ─────────────────────────────────────────────┐\033[0m"
+      echo -e "\033[34m│ Tokens: ~$tokens │ Duration: ${duration}s │ Speed: ~${tps} tok/s\033[0m"
+      echo -e "\033[34m└────────────────────────────────────────────────────────────────────┘\033[0m"
+      break
+    fi
+  done < <(curl -sN ${OLLAMA_HOST}/api/generate \
+    -H "Content-Type: application/json" \
+    -d "{\"model\": \"$model\", \"prompt\": \"$enhanced_prompt\", \"stream\": true}" 2>/dev/null)
+}
+
+fast_ask() {
+  local prompt="$*"
+  local model="${FAST_MODEL:-gemma3:latest}"
+  local start_time=$(date +%s)
+  local tokens=0
+  
+  echo -e "\033[32m┌─ Fast AI (Markdown) ──────────────────────────────────────────────┐\033[0m"
+  echo -e "\033[32m│ Model: $model (Optimized for Speed)\033[0m"
+  echo -e "\033[32m│ Host: $OLLAMA_HOST\033[0m"
+  echo -e "\033[32m└────────────────────────────────────────────────────────────────────┘\033[0m"
+  echo
+  
+  local enhanced_prompt="Please format your response in proper Markdown. Be concise but thorough. $prompt"
+  
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    
+    response=$(echo "$line" | jq -r '.response // empty' 2>/dev/null)
+    if [[ ! -z "$response" ]]; then
+      printf "%s" "$response"
+      tokens=$((tokens + 1))
+    fi
+    
+    done=$(echo "$line" | jq -r '.done // false' 2>/dev/null)
+    if [[ "$done" == "true" ]]; then
+      local end_time=$(date +%s)
+      local duration=$((end_time - start_time))
+      local tps=$(( tokens > 0 && duration > 0 ? tokens / duration : 0 ))
+      
+      echo
+      echo -e "\033[32m┌─ Response Statistics ─────────────────────────────────────────────┐\033[0m"
+      echo -e "\033[32m│ Tokens: ~$tokens │ Duration: ${duration}s │ Speed: ~${tps} tok/s\033[0m"
+      echo -e "\033[32m└────────────────────────────────────────────────────────────────────┘\033[0m"
+      break
+    fi
+  done < <(curl -sN ${OLLAMA_HOST}/api/generate \
+    -H "Content-Type: application/json" \
+    -d "{\"model\": \"$model\", \"prompt\": \"$enhanced_prompt\", \"stream\": true}" 2>/dev/null)
+}
+
+instruct_ask() {
+  local prompt="$*"
+  local model="${INSTRUCT_MODEL:-qwen2.5-coder:7b-instruct}"
+  local start_time=$(date +%s)
+  local tokens=0
+  
+  echo -e "\033[35m┌─ Instruction Assistant (Markdown) ────────────────────────────────┐\033[0m"
+  echo -e "\033[35m│ Model: $model\033[0m"
+  echo -e "\033[35m│ Host: $OLLAMA_HOST\033[0m"
+  echo -e "\033[35m└────────────────────────────────────────────────────────────────────┘\033[0m"
+  echo
+  
+  local enhanced_prompt="Please format your response in proper Markdown with clear structure. Follow instructions precisely. $prompt"
+  
+  while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    
+    response=$(echo "$line" | jq -r '.response // empty' 2>/dev/null)
+    if [[ ! -z "$response" ]]; then
+      printf "%s" "$response"
+      tokens=$((tokens + 1))
+    fi
+    
+    done=$(echo "$line" | jq -r '.done // false' 2>/dev/null)
+    if [[ "$done" == "true" ]]; then
+      local end_time=$(date +%s)
+      local duration=$((end_time - start_time))
+      local tps=$(( tokens > 0 && duration > 0 ? tokens / duration : 0 ))
+      
+      echo
+      echo -e "\033[35m┌─ Response Statistics ─────────────────────────────────────────────┐\033[0m"
+      echo -e "\033[35m│ Tokens: ~$tokens │ Duration: ${duration}s │ Speed: ~${tps} tok/s\033[0m"
+      echo -e "\033[35m└────────────────────────────────────────────────────────────────────┘\033[0m"
+      break
+    fi
+  done < <(curl -sN ${OLLAMA_HOST}/api/generate \
+    -H "Content-Type: application/json" \
+    -d "{\"model\": \"$model\", \"prompt\": \"$enhanced_prompt\", \"stream\": true}" 2>/dev/null)
+}
+
+# Model information function
+model_info() {
+  local model="${1:-$ASK_MODEL}"
+  
+  echo -e "\033[36m┌─ Model Information ───────────────────────────────────────────────┐\033[0m"
+  echo -e "\033[36m│ Fetching info for: $model\033[0m"
+  echo -e "\033[36m│ Host: $OLLAMA_HOST\033[0m"
+  echo -e "\033[36m└────────────────────────────────────────────────────────────────────┘\033[0m"
+  echo
+  
+  curl -s ${OLLAMA_HOST}/api/show -d "{\"name\": \"$model\"}" | jq -r '
+    "## Model Details",
+    "",
+    "- **Name**: " + .details.family,
+    "- **Parameters**: " + .details.parameter_count,
+    "- **Quantization**: " + .details.quantization_level,
+    "- **Context Length**: " + (.details.context_length // "N/A" | tostring),
+    "- **Size**: " + (.size // 0 | . / 1024 / 1024 / 1024 | floor | tostring) + " GB",
+    "",
+    "## Template",
+    "```",
+    .template // "No template available",
+    "```",
+    "",
+    "## System Message",
+    "```",
+    .system // "No system message",
+    "```"
+  ' 2>/dev/null || echo "❌ Could not fetch model information"
+}
+
+# Helpful aliases
+alias askcode="code_help"
+alias askai="ask"
+alias models="ollama_models"
+alias askmd="ask_md"
+alias codemd="code_md"
+alias fastask="fast_ask"
+alias instruct="instruct_ask"
+alias minfo="model_info"

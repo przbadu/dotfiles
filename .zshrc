@@ -119,6 +119,10 @@ export PATH="$HOME/.local/bin:$PATH"
 # bun completions
 [ -s "/home/przbadu/.bun/_bun" ] && source "/home/przbadu/.bun/_bun"
 
+# Ollama commands
+source "$HOME/.zshrc.ollama"
+
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
+export PATH=$HOME/dev/flutter/bin:$PATH
