@@ -11,7 +11,7 @@ local function tmux_navigate(direction)
     k = function() return vim.fn.winnr() == vim.fn.winnr("k") end,
     l = function() return vim.fn.winnr() == vim.fn.winnr("l") end,
   }
-  
+
   if at_edge[direction]() then
     vim.fn.system("tmux select-pane -" .. tmux_direction[direction])
   else
