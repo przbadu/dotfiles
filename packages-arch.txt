@@ -47,12 +47,14 @@ openssl-1.1
 
 ## GUI Applications (AUR where needed)
 aur: slack-desktop
-firefox
-docker
+aur: firefox
+aur: docker
 aur: spotify
 aur: obsidian
 aur: pgadmin4
 aur: localsend-bin
+aur: lmstudio
+aur: lazydocker
 
 ## Additional Tools
 unzip
