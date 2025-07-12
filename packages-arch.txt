@@ -41,6 +41,7 @@ libxslt
 redis
 lazygit
 ghostty
+git-lfs
 
 ## Development Libraries
 openssl-1.1
