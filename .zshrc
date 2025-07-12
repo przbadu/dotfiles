@@ -100,6 +100,7 @@ alias htop='btop'
 alias dcdev="docker-compose -f docker-compose-dev.yml"
 alias web="dcdev run web"
 alias rtest="RAILS_ENV=test bundle exec rake test TESTOPTS=\"--seed=25773\" TESTOPTS=--profile"
+alias claude="$HOME/.claude/local/claude"
 
 # nvm (node version manager)
 export NVM_DIR="$HOME/.nvm"
