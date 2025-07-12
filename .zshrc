@@ -126,3 +126,4 @@ source "$HOME/.zshrc.ollama"
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 export PATH=$HOME/dev/flutter/bin:$PATH
+
