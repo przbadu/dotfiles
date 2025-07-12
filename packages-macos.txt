@@ -29,6 +29,7 @@ stripe/stripe-cli/stripe
 redis
 libxml2
 libxslt
+git-lfs
 
 ## GUI Applications (Casks)
 cask: google-chrome
