@@ -21,4 +21,18 @@ if [ ! -d "${HOME}/.tmux/plugins/tpm" ]; then
   git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 fi
 
-echo "Change your terminal font size in: $HOME/.config/alacritty/alacritty.toml"
+# install uv
+wget -qO- https://astral.sh/uv/install.sh | sh
+echo "export PATH=$HOME/.local/share/../bin:$PATH" >> ~/.zshrc
+
+# Install llm
+uv tool install llm
+llm install llm-openrouter
+llm install llm-ollama
+echo ""
+echo ""
+echo "PLEASE SET THE OPENROUTER KEY FOR llm tool with:"
+echo "llm keys set openrouter"
+echo ""
+echo ""
+
