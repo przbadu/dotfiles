@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# Wrapper script to run llama-server from toolbox container on fedora
+# This script is originally written for Strix Halo mini PC running Fedora in it.
+# you can use this `llama-server` directly in your CLI or You can also use it as a
+# llama-server backend configuration for your https://www.jan.ai/ desktop app.
+
+# Name of your toolbox container
+# Follow: https://github.com/kyuz0/amd-strix-halo-toolboxes to configure toolbox before executing
+# This script.
+CONTAINER_NAME="llama-vulkan-radv" # 
+
+# Path to llama-server inside the container
+LLAMA_SERVER_PATH="/usr/bin/llama-server"
+
+# Debug logging (optional - comment out for production)
+echo "[$(date)] Jan AI calling llama-server with args: $@" >> ~/.jan/llama-wrapper.log
+
+# Execute llama-server inside the toolbox container with all arguments
+exec toolbox run --container "$CONTAINER_NAME" "$LLAMA_SERVER_PATH" "$@"
+
+# Alternative with more environment control:
+# exec toolbox run --container "$CONTAINER_NAME" \
+#     env LLAMA_VULKAN=1 \
+#     AMD_VULKAN_ICD=RADV \
+#     "$LLAMA_SERVER_PATH" "$@"
+
