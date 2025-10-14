@@ -151,7 +151,13 @@ fi
 
 # Check if input is coming from pipe
 if [[ -t 0 ]]; then
-    error "No input provided. Pipe a command's output to llmx."
+    # No piped input - fallback to plain llm command
+    # Reconstruct all original arguments
+    ARGS=("$QUERY")
+
+    # Note: prompt arguments were already consumed during parsing,
+    # so we only pass the query to llm
+    exec llm "${ARGS[@]}"
 fi
 
 # Read piped input
