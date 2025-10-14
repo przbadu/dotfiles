@@ -1,0 +1,161 @@
+#!/usr/bin/env bash
+
+# llmx - LLM wrapper with system prompts
+# Usage: <command> --help | llmx "what you want to do"
+
+set -e
+
+# Get the directory where llmx is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
+PROMPTS_DIR="$PROJECT_ROOT/system-prompts"
+
+# Default prompt name
+DEFAULT_PROMPT="unix"
+
+# Function to show usage
+usage() {
+    cat << 'USAGE'
+llmx - LLM wrapper with system prompts
+
+Usage:
+    <command> | llmx "what you want to do"
+    <command> | llmx "query" -p PROMPT_NAME
+    <command> | llmx "query" --prompt PROMPT_NAME
+
+Examples:
+    git --help | llmx "undo all changes"                    # uses default unix prompt
+    docker ps -a | llmx "remove all containers" -p docker
+    cat email.txt | llmx "make it formal" --prompt writing
+    
+Options:
+    -h, --help             Show this help message
+    -p, --prompt PROMPT    Use specific prompt from system-prompts/ (default: unix)
+    -l, --list             List available system prompts
+    
+USAGE
+    exit 0
+}
+
+# Function to find prompt file with any extension
+find_prompt_file() {
+    local prompt_name="$1"
+    local extensions=("md" "txt" "xml" "json" "yml" "yaml")
+    
+    for ext in "${extensions[@]}"; do
+        local file="$PROMPTS_DIR/${prompt_name}.${ext}"
+        if [[ -f "$file" ]]; then
+            echo "$file"
+            return 0
+        fi
+    done
+    
+    return 1
+}
+
+# Function to list available prompts
+list_prompts() {
+    echo "Available system prompts:"
+    local found_prompts=()
+    
+    # Find all prompt files with supported extensions
+    for file in "$PROMPTS_DIR"/*; do
+        if [[ -f "$file" ]]; then
+            local basename=$(basename "$file")
+            local name="${basename%.*}"
+            
+            # Check if it has a supported extension
+            case "${basename##*.}" in
+                md|txt|xml|json|yml|yaml)
+                    # Avoid duplicates (same name, different extensions)
+                    if [[ ! " ${found_prompts[@]} " =~ " ${name} " ]]; then
+                        found_prompts+=("$name")
+                        echo "  - $name (${basename##*.})"
+                    fi
+                    ;;
+            esac
+        fi
+    done
+    
+    if [[ ${#found_prompts[@]} -eq 0 ]]; then
+        echo "  No prompts found in $PROMPTS_DIR"
+    fi
+    
+    exit 0
+}
+
+# Function to show error
+error() {
+    echo "Error: $1" >&2
+    exit 1
+}
+
+# Parse arguments
+QUERY=""
+PROMPT_NAME="$DEFAULT_PROMPT"
+
+while [[ $# -gt 0 ]]; do
+    case $1 in
+        -h|--help)
+            usage
+            ;;
+        -l|--list)
+            list_prompts
+            ;;
+        -p|--prompt)
+            if [[ -z "$2" || "$2" == -* ]]; then
+                error "Option $1 requires an argument"
+            fi
+            PROMPT_NAME="$2"
+            shift 2
+            ;;
+        -*)
+            error "Unknown option: $1"
+            ;;
+        *)
+            if [[ -z "$QUERY" ]]; then
+                QUERY="$1"
+            else
+                error "Unexpected argument: $1"
+            fi
+            shift
+            ;;
+    esac
+done
+
+# Check if query is provided
+if [[ -z "$QUERY" ]]; then
+    error "No query provided. Usage: <command> | llmx \"what you want to do\""
+fi
+
+# Check if llm command exists
+if ! command -v llm &> /dev/null; then
+    error "llm command not found. Please install it first: https://llm.datasette.io/"
+fi
+
+# Find prompt file with any extension
+PROMPT_FILE=$(find_prompt_file "$PROMPT_NAME")
+
+if [[ -z "$PROMPT_FILE" ]]; then
+    error "System prompt not found: ${PROMPT_NAME}
+       Available prompts: $(cd "$PROMPTS_DIR" 2>/dev/null && ls *.{md,txt,xml,json,yml,yaml} 2>/dev/null | sed 's/\.[^.]*$//' | sort -u | tr '\n' ' ' || echo 'none')"
+fi
+
+# Check if input is coming from pipe
+if [[ -t 0 ]]; then
+    error "No input provided. Pipe a command's output to llmx."
+fi
+
+# Read piped input
+PIPED_INPUT=$(cat)
+
+# Check if piped input is empty
+if [[ -z "$PIPED_INPUT" ]]; then
+    error "Empty input received. Make sure the command produces output."
+fi
+
+# Read system prompt from file
+SYSTEM_PROMPT=$(cat "$PROMPT_FILE")
+
+# Execute llm with the system prompt and user query
+echo "$PIPED_INPUT" | llm "$QUERY" --system "$SYSTEM_PROMPT"

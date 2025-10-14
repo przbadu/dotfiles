@@ -100,7 +100,9 @@ alias htop='btop'
 alias dcdev="docker-compose -f docker-compose-dev.yml"
 alias web="dcdev run web"
 alias rtest="RAILS_ENV=test bundle exec rake test TESTOPTS=\"--seed=25773\" TESTOPTS=--profile"
-alias claude="$HOME/.claude/local/claude"
+alias llm_gcm='git commit -m "$(git diff --staged | llm < .claude/commands/commit-message.md "ALWAYS make sure to always output text without backticks")"'
+alias news="curl -s https://apnews.com && curl -s https://www.bbc.com/news && curl -s https://www.bloomberg.com/asia && curl -s https:/www.nytimes.com && curl -s https://www.c-span.org && curl -s https://www.forbes.com"
+alias hackernews="curl -s https://news.ycombinator.com && curl -s https://www.reddit.com/"
 
 # nvm (node version manager)
 export NVM_DIR="$HOME/.nvm"
@@ -127,4 +129,10 @@ source "$HOME/.zshrc.ollama"
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 export PATH=$HOME/dev/flutter/bin:$PATH
+export PATH="$HOME/.claude/local:$PATH"
+
+
+# Added by LM Studio CLI (lms)
+export PATH="$PATH:/Users/przbadu/.lmstudio/bin"
+# End of LM Studio CLI section
 
