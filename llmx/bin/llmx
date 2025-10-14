@@ -5,8 +5,16 @@
 
 set -e
 
-# Get the directory where llmx is located
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Get the directory where llmx is located (resolve symlinks)
+SOURCE="${BASH_SOURCE[0]}"
+# Resolve $SOURCE until the file is no longer a symlink
+while [ -L "$SOURCE" ]; do
+    DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
+    SOURCE="$(readlink "$SOURCE")"
+    # If $SOURCE was a relative symlink, resolve it relative to the symlink location
+    [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE"
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 PROMPTS_DIR="$PROJECT_ROOT/system-prompts"
 
