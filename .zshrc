@@ -103,6 +103,7 @@ alias rtest="RAILS_ENV=test bundle exec rake test TESTOPTS=\"--seed=25773\" TEST
 alias llm_gcm='git commit -m "$(git diff --staged | llm < .claude/commands/commit-message.md "ALWAYS make sure to always output text without backticks")"'
 alias news="curl -s https://apnews.com && curl -s https://www.bbc.com/news && curl -s https://www.bloomberg.com/asia && curl -s https:/www.nytimes.com && curl -s https://www.c-span.org && curl -s https://www.forbes.com"
 alias hackernews="curl -s https://news.ycombinator.com && curl -s https://www.reddit.com/"
+alias ultrahook='ruby ~/ultrahook_fixed.rb'
 
 # nvm (node version manager)
 export NVM_DIR="$HOME/.nvm"
@@ -130,9 +131,34 @@ export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
 export PATH=$HOME/dev/flutter/bin:$PATH
 export PATH="$HOME/.claude/local:$PATH"
+export PATH="$PATH:$HOME/.pub-cache/bin"
 
 
 # Added by LM Studio CLI (lms)
 export PATH="$PATH:/Users/przbadu/.lmstudio/bin"
 # End of LM Studio CLI section
 
+
+## [Completion]
+## Completion scripts setup. Remove the following line to uninstall
+[[ -f /Users/przbadu/.dart-cli-completion/zsh-config.zsh ]] && . /Users/przbadu/.dart-cli-completion/zsh-config.zsh || true
+## [/Completion]
+
+
+# Added by Antigravity
+export PATH="/Users/przbadu/.antigravity/antigravity/bin:$PATH"
+
+# Zoxide fix for claude code
+[[ $- == *i* ]] && eval "$(zoxide init --cmd cd zsh)"
+
+# Task Master aliases added on 1/28/2026
+alias tm='task-master'
+alias taskmaster='task-master'
+alias hamster='task-master'
+alias ham='task-master'
+
+# Claude Code deferred MCP loading (added by Taskmaster)
+export ENABLE_EXPERIMENTAL_MCP_CLI='true'
+
+# export ANTHROPIC_API_KEY="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"
+# export GOOGLE_API_KEY="AIzaSyA87AuWBUdxkUUmJ5lr1JLFBXFFCXkHxCA"
