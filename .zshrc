@@ -159,6 +159,3 @@ alias ham='task-master'
 
 # Claude Code deferred MCP loading (added by Taskmaster)
 export ENABLE_EXPERIMENTAL_MCP_CLI='true'
-
-# export ANTHROPIC_API_KEY="***REMOVED-ANTHROPIC-KEY***"
-# export GOOGLE_API_KEY="***REMOVED-GOOGLE-KEY***"
