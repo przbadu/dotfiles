@@ -74,11 +74,8 @@ fi
 # Activate mise
 eval "$(~/.local/bin/mise activate)"
 
-# Zoxide
-eval "$(zoxide init --cmd cd zsh)"
-
-# Load completions
-autoload -U compinit && compinit
+# Load completions (-u: trust insecure dirs, needed for multi-admin Homebrew setup)
+autoload -U compinit && compinit -u
 zinit cdreplay -q
 
 ### PATH configurations
@@ -104,6 +101,7 @@ alias llm_gcm='git commit -m "$(git diff --staged | llm < .claude/commands/commi
 alias news="curl -s https://apnews.com && curl -s https://www.bbc.com/news && curl -s https://www.bloomberg.com/asia && curl -s https:/www.nytimes.com && curl -s https://www.c-span.org && curl -s https://www.forbes.com"
 alias hackernews="curl -s https://news.ycombinator.com && curl -s https://www.reddit.com/"
 alias ultrahook='ruby ~/ultrahook_fixed.rb'
+alias cc="claude --dangerously-skip-permissions --chrome"
 
 # nvm (node version manager)
 export NVM_DIR="$HOME/.nvm"
@@ -148,17 +146,26 @@ export PATH="$PATH:/Users/przbadu/.lmstudio/bin"
 # Added by Antigravity
 export PATH="/Users/przbadu/.antigravity/antigravity/bin:$PATH"
 
-# Zoxide fix for claude code
-[[ $- == *i* ]] && eval "$(zoxide init --cmd cd zsh)"
-
-# Task Master aliases added on 1/28/2026
-alias tm='task-master'
-alias taskmaster='task-master'
-alias hamster='task-master'
-alias ham='task-master'
+# flutter
+export PATH="$HOME/flutter/bin:$PATH"
 
 # Claude Code deferred MCP loading (added by Taskmaster)
 export ENABLE_EXPERIMENTAL_MCP_CLI='true'
 
 # export ANTHROPIC_API_KEY="***REMOVED-ANTHROPIC-KEY***"
 # export GOOGLE_API_KEY="***REMOVED-GOOGLE-KEY***"
+typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
+
+export CLOUDSDK_PYTHON=/opt/homebrew/opt/python@3.13/libexec/bin/python3
+
+# Zoxide
+eval "$(zoxide init --cmd cd zsh)"
+# Zoxide fix for claude code
+[[ $- == *i* ]] && eval "$(zoxide init --cmd cd zsh)"
+
+alias claude-mem='bun "/Users/przbadu/.claude/plugins/marketplaces/thedotmack/plugin/scripts/worker-service.cjs"'
+export SENTRY_DSN="***REMOVED-SENTRY-DSN***"
+
+# opencode
+export PATH=/Users/przbadu/.opencode/bin:$PATH
+export PATH="$PATH:/Applications/WezTerm.app/Contents/MacOS"
