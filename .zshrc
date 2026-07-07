@@ -152,8 +152,9 @@ export PATH="$HOME/flutter/bin:$PATH"
 # Claude Code deferred MCP loading (added by Taskmaster)
 export ENABLE_EXPERIMENTAL_MCP_CLI='true'
 
-# export ANTHROPIC_API_KEY="***REMOVED-ANTHROPIC-KEY***"
-# export GOOGLE_API_KEY="***REMOVED-GOOGLE-KEY***"
+# Secrets (API keys, tokens, DSNs) live in ~/.zshrc.local — never committed.
+[[ -f "${HOME}/.zshrc.local" ]] && source "${HOME}/.zshrc.local"
+
 typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet
 
 export CLOUDSDK_PYTHON=/opt/homebrew/opt/python@3.13/libexec/bin/python3
@@ -164,7 +165,6 @@ eval "$(zoxide init --cmd cd zsh)"
 [[ $- == *i* ]] && eval "$(zoxide init --cmd cd zsh)"
 
 alias claude-mem='bun "/Users/przbadu/.claude/plugins/marketplaces/thedotmack/plugin/scripts/worker-service.cjs"'
-export SENTRY_DSN="***REMOVED-SENTRY-DSN***"
 
 # opencode
 export PATH=/Users/przbadu/.opencode/bin:$PATH

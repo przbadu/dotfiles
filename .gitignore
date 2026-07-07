@@ -1,1 +1,13 @@
 logs/
+
+# Machine-local secrets — never commit
+.zshrc.local
+*.local
+.env
+.env.*
+
+# OS / editor cruft
+.DS_Store
+*.swp
+*.swo
+*~
